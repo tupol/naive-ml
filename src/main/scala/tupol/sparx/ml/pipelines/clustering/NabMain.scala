@@ -1,21 +1,69 @@
 package tupol.sparx.ml.pipelines.clustering
 
-import com.typesafe.config.Config
-import org.apache.spark.SparkContext
-import tupol.sparx.ml.commons.SparkRunnable
-
-import scala.util.{Success, Try}
+import org.apache.spark.ml.{Pipeline, PipelineModel}
+import org.apache.spark.ml.feature.{MinMaxScaler, VectorAssembler, SQLTransformer, RegexTokenizer}
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.types.{DataType, StructType}
+import tupol.sparx.ml.commons.ml.{DataImporter, PreProcessorBuilder}
 
 /**
   * This is mainly useful to show the flow when starting from scratch.
   */
-object NabMain extends SparkRunnable {
+object NabMain extends AbstractMain {
 
   val appName = NAB
+  val preProcessorBuilder = PreProcessorBuilderImpl
 
-  def run(implicit sc: SparkContext, config: Config) = Main.run(appName)
 
-  // TODO implement a configuration validation
-  override def validate(implicit sc: SparkContext, config: Config): Try[Boolean] = Success(true)
+  /**
+    * Pre-processing pipeline builder for the NAB data
+    */
+  object PreProcessorBuilderImpl extends PreProcessorBuilder {
+
+    def createPreProcessor(
+                            inputDataFrame: DataFrame,
+                            rawDataColName: String, inputJsonSchema: String,
+                            outputColName: String
+                          ): PipelineModel = {
+
+      // Get the schema that we use for assembling the typed columns out of the parsed data
+      val schema: StructType = DataType.fromJson(inputJsonSchema).asInstanceOf[StructType]
+
+      // Transform the raw input string into an array of string, give a tokenizer
+      val tokenizer = new RegexTokenizer().
+        setPattern(",").
+        setInputCol(rawDataColName)
+
+      // Split the array of string into multiple columns as described by the schema
+      val dataImporter = new DataImporter().
+        setInputCol(tokenizer.getOutputCol).
+        setNewSchema(schema)
+
+      val sqlTransformer = new SQLTransformer().
+        setStatement("SELECT *, hour(timestamp) as hour FROM  __THIS__")
+
+      // Out of the columns produced by the StringHasher and the columns already containing numbers
+      // and produce a column of Vectors
+      val toFeaturesVector = new VectorAssembler().
+        setInputCols(Array("hour", "value"))
+
+      // Scale the vectors so they will fit between -1 and 1
+      val scaleAndCenter = new MinMaxScaler().
+        setMin(-1).setMax(1).
+        setInputCol(toFeaturesVector.getOutputCol).
+        setOutputCol(outputColName)
+
+      // Build the pre-processing pipeline
+      new Pipeline().
+        setStages(Array(
+          tokenizer,
+          dataImporter,
+          sqlTransformer,
+          toFeaturesVector,
+          scaleAndCenter
+        )).fit(inputDataFrame)
+    }
+  }
+
 
 }

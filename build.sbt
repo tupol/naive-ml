@@ -25,6 +25,7 @@ libraryDependencies ++= providedDependencies
 libraryDependencies ++= Seq(
   "org.elasticsearch" %% "elasticsearch-spark" % "2.2.0" intransitive(),
   "org.apache.spark" %% "spark-streaming-kafka" % sparkVersion,
+  "spark.jobserver" %% "job-server-api" % "0.6.1",
   "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 )
 

@@ -12,7 +12,7 @@ case class ClusteringDistanceMetrics(private val predictions: RDD[(Int, Double)]
   private[this] val inputNotCached = predictions.getStorageLevel == None
   if(inputNotCached) predictions.persist()
 
-  val metricsByCluster: Seq[DistanceStats] = {
+  val byCluster: Seq[DistanceStats] = {
     predictions.groupByKey.
       map { case (clust, dist) =>
         val avgDist = dist.sum / dist.size
@@ -22,7 +22,7 @@ case class ClusteringDistanceMetrics(private val predictions: RDD[(Int, Double)]
       }.collect.toSeq.sortBy(_._1).map(_._2)
   }
 
-  val metricsByModel: DistanceStats = {
+  val byModel: DistanceStats = {
     val count = predictions.count
     val distances = predictions.map(_._2)
     val avgDist = distances.sum / count
@@ -30,9 +30,9 @@ case class ClusteringDistanceMetrics(private val predictions: RDD[(Int, Double)]
     val variance = sse / count
     DistanceStats(
       count,
-      metricsByCluster.map(_.min).min,
+      byCluster.map(_.min).min,
       avgDist,
-      metricsByCluster.map(_.max).max,
+      byCluster.map(_.max).max,
       sse,
       variance
     )
