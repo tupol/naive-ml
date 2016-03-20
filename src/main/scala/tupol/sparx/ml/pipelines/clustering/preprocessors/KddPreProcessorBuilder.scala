@@ -1,12 +1,10 @@
 package tupol.sparx.ml.pipelines.clustering.preprocessors
 
-import tupol.sparx.ml.commons.ml._
 import org.apache.spark.ml.feature._
 import org.apache.spark.ml.{Pipeline, PipelineModel}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.{DataType, StructType}
-import tupol.sparx.ml.commons.ml.PreProcessorBuilder
-import tupol.sparx.ml.commons.ml.PreProcessorBuilder
+import tupol.sparx.ml.commons.ml.{PreProcessorBuilder, _}
 
 /**
   * Pre-processing pipeline builder for the KDD data
@@ -37,7 +35,7 @@ object KddPreProcessorBuilder extends PreProcessorBuilder {
     // I was asked why, fair enough. The main reason is the limitation of the StringIndexer, which I already tried,
     // but StringIndexer manages unknown labels by throwing an exception, which is undesirable.
     val stringHasher = discreteCols.map { colName =>
-      new StringHasher().
+      new MurmurHasher().
         setInputCol(colName)
     }
 

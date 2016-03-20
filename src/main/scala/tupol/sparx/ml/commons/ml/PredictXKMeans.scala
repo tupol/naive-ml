@@ -9,12 +9,18 @@ import tupol.sparx.ml.commons.SparkRunnable
 import tupol.sparx.ml.commons.io._
 import tupol.sparx.ml.pipelines.clustering.Configuration
 
-import scala.util.{Success, Try}
-
 /**
   * Predictor for the given app.
   */
 class PredictXKMeans(val appName: String) extends SparkRunnable with Logging {
+
+  val requiredParameters = Seq(
+    "prefix",
+    "path.wip",
+    "path.output",
+    "prediction.file",
+    "prediction.pipeline"
+  )
 
   def run(implicit sc: SparkContext, config: Config) = {
 
@@ -41,7 +47,16 @@ class PredictXKMeans(val appName: String) extends SparkRunnable with Logging {
     logInfo(s"$appName: Selecting anomalies: all records having the probability < ${conf.threshold}. ")
     val anomalies = predictions.where(f"probability < ${conf.threshold}%6.4f" )
 
+    anomalies.select(conf.rawTimestampColName, pipeline.exportableColumns : _*)
+      .take (10)
+      .foreach{ r =>
 
+        import org.apache.spark.mllib.linalg.Vector
+        println(r)
+        val probs = r.getAs[Vector]("probabilityByFeature").toArray
+        val probByfeature = (0 until probs.size).zip(probs).sortBy(_._2).take(10).foreach(println)
+
+      }
 
     logInfo(s"${anomalies.count} anomalies found out of ${predictions.count} analysed records.")
 
@@ -53,9 +68,6 @@ class PredictXKMeans(val appName: String) extends SparkRunnable with Logging {
       write.json(outFile)
 
   }
-
-  // TODO implement a configuration validation
-  override def validate(implicit sc: SparkContext, config: Config): Try[Boolean] = Success(true)
 
 }
 
