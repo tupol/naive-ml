@@ -76,7 +76,7 @@ class XKMeans2Model private[ml](
 
       Vectors.dense((0 until featuresNo).map{ f =>
         val sqerr = (point(f) - averages(f)) * (point(f) - averages(f))
-        val variance = if(variances(f) == 0) minVariance else variances(f)
+        val variance = if(variances(f) == 0) minVarianceByFeature(f) else variances(f)
         import math._
         val rez = (1 / (sqrt(2 * Pi * variance)) *
           math.exp(-sqerr / (2 * variance))
@@ -84,9 +84,6 @@ class XKMeans2Model private[ml](
         rez
       }.toArray)
     }
-
-//    def probability(k: Int, point: Vector) =
-//      probabilityByFeature(k, point).toArray.reduce(_ * _)
 
     def probability(probabilities: Vector) =
       probabilities.toArray.reduce(_ * _)
@@ -130,8 +127,3 @@ with HasDistanceToCentroidCol  with HasProbabilityCol with HasProbabilityByFeatu
     SchemaUtils.appendColumn(schema, $(probabilityByFeatureCol), new VectorUDT)
   }
 }
-
-
-
-
-
