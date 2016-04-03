@@ -64,4 +64,7 @@ artifact in (Compile, assembly) := {
 
 addArtifact(artifact in (Compile, assembly), assembly)
 
+
+publishArtifact in Test := true
+
 // ------------------------------
