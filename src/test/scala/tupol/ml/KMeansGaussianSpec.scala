@@ -49,7 +49,7 @@ class KMeansGaussianSpec extends FunSuite with Matchers {
     val expectedProbabilities = Seq(1.0, 0.6, 0.005, 0.000009, 0.0000009)
     val actualProbabilities = points.map(kmg.predict)
 
-    expectedProbabilities.zip(actualProbabilities).forall{ case(e, a) => e >= a}
+    expectedProbabilities.zip(actualProbabilities).forall { case (e, a) => e >= a }
 
     def pointToStr(point: Point) = point.map(x => f"$x%+12.10f").mkString("[", ", ", "]")
     def lpointToStr(lp: LabeledPoint) = f"(${lp._1}%.0f ${pointToStr(lp._2)})"
@@ -57,10 +57,9 @@ class KMeansGaussianSpec extends FunSuite with Matchers {
     println("Clusters")
     kmeans.clusterCenters.map(lpointToStr).foreach(println)
     println("Predictions")
-    points.foreach{ point =>
+    points.foreach { point =>
       println(f"${lpointToStr(kmeans.predict(point))}  ${kmg.predict(point)}%12.10f  ${pointToStr(kmg.predictByDimension(point))}")
     }
   }
-
 
 }
