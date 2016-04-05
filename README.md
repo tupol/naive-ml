@@ -1,4 +1,3 @@
-# SparX ML Demo
+# Naive Scala Machine Learning Library
 
-- [Clustering Pipelines](docs/pipelines.md)
-- [Clustering Streaming](docs/streaming.md)
+This is a self education project in Machine Learning algorithms, that was started from my other sparx-ml project.
