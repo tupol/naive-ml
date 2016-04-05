@@ -9,7 +9,7 @@ import utils.ClusterGen2D
 class KMeansSpec extends FunSuite with Matchers {
 
   import ClusterGen2D._
-  import KMeans._
+  import KMeansTrainer._
 
   val dataPoints1 = Seq(
     Array(0.0, 0.0)
@@ -138,11 +138,11 @@ class KMeansSpec extends FunSuite with Matchers {
     assert(actual === expected)
   }
 
-  test("MeansKs#train test 2 discs") {
+  test("KMeans#train test 2 discs") {
 
     val expected = Seq(Array(0.0, 0.0), Array(2.0, 2.0)).sortWith((a, b) =>
       a.zip(b).find(t => t._1 < t._2).isDefined)
-    val actual = train(2, 100, 0.1, dataPoints2L).map(_._2).sortWith((a, b) =>
+    val actual = KMeansTrainer(2, 100, 0.1).train(dataPoints2L).clusterCenters.map(_._2).sortWith((a, b) =>
       a.zip(b).find(t => t._1 < t._2).isDefined)
 
     val epsilon = 0.01
@@ -150,11 +150,11 @@ class KMeansSpec extends FunSuite with Matchers {
     actual.zip(expected).forall(t => math.sqrt(distance2(t._1, t._2)) < epsilon)
   }
 
-  test("MeansKs#train test 3 discs") {
+  test("KMeans#train test 3 discs") {
 
     val expected = Seq(Array(0.0, 0.0), Array(1.0, 0.0), Array(3.0, 0.0)).sortWith((a, b) =>
       a.zip(b).find(t => t._1 < t._2).isDefined)
-    val actual = train(3, 100, 0.1, dataPoints3L).map(_._2).sortWith((a, b) =>
+    val actual = KMeansTrainer(3, 100, 0.1).train(dataPoints3L).clusterCenters.map(_._2).sortWith((a, b) =>
       a.zip(b).find(t => t._1 < t._2).isDefined)
 
     val epsilon = 0.01
