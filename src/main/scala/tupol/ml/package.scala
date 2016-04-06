@@ -18,9 +18,20 @@ package object ml {
     def train(data: Seq[T]): P
   }
 
-  implicit class XPoint(thisPoint: Point) {
+  implicit class PointOps(thisPoint: Point) {
 
     def *(scalar: Double) = thisPoint.map(_ * scalar)
+
+    def *(thatPoint: Point) = {
+      require(thisPoint.size == thatPoint.size)
+      thisPoint.zip(thatPoint).map{case(t, x) => t * x}.sum
+    }
+
+
+    def -(thatPoint: Point) = {
+      require(thisPoint.size == thatPoint.size)
+      thisPoint.zip(thatPoint).map{case(t, x) => t - x}
+    }
 
     def /(scalar: Double) = thisPoint.map(_ / scalar)
 
@@ -32,7 +43,7 @@ package object ml {
     }
   }
 
-  implicit class XPoints(points: Seq[Point]) {
+  implicit class PointsOps(points: Seq[Point]) {
 
     lazy val size = points.size
 
@@ -40,18 +51,27 @@ package object ml {
 
     def /(scalar: Double) = points.map(_ / scalar)
 
-    def mean(): Point = {
+    def variance(mean: Point): Point = {
+      points.map(_.distance2ByDimension(mean)).sumByDimension / size
+    }
+
+    lazy val mean: Point = {
       require(size > 0)
       sumByDimension / size
     }
 
-    def sumByDimension : Point = {
+    lazy val sumByDimension : Point = {
       require(size > 0)
       points.reduce((v1, v2) => v1.zip(v2).map(x => x._1 + x._2))
     }
 
-    def variance(mean: Point): Point = {
+    lazy val variance: Point = {
       points.map(_.distance2ByDimension(mean)).sumByDimension / size
+    }
+
+    def normalize() = {
+      val sigma = variance.map(math.sqrt)
+      points.map(v => v.zip(mean).zip(sigma).map{case ((x, mu), sig) => (x - mu) / sig})
     }
 
   }

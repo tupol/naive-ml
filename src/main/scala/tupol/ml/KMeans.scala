@@ -55,27 +55,28 @@ case class KMeansTrainer(k: Int, maxIter: Int, tolerance: Double) extends Traine
       if (step == maxIter + 1 || done)
         oldCentroids
       else {
-        val newCentroids = run(dataPoints, oldCentroids)
-        val done = clustersMovements(oldCentroids, newCentroids).isEmpty
+        val newCentroids = newControids(dataPoints, oldCentroids)
+        val done = centroidsMovements(oldCentroids, newCentroids).isEmpty
         train(newCentroids, step + 1, done)
       }
     }
 
-    def clustersMovements(oldCentroids: Seq[LabeledPoint], newCentroids: Seq[LabeledPoint]) =
+    def centroidsMovements(oldCentroids: Seq[LabeledPoint], newCentroids: Seq[LabeledPoint]) =
       newCentroids.map { case (k, point) =>
         oldCentroids.toMap.get(k).map(_.distance2(point))
       }.filter(_.isDefined).map(_.get)
+
+    def newControids(points: Seq[Point], clusters: Seq[LabeledPoint]): Seq[LabeledPoint] = {
+      val pointsByK = KMeans(clusters).predict(points)
+      val newClusters = pointsByK.groupBy(_._1).map{ case (k, kfx) => (k, mean(kfx.map(_._2)))}.toSeq
+      newClusters
+    }
 
     val centroids = train(initialCentroids, 0, false)
     KMeans(centroids)
 
   }
 
-  private[ml] def run(points: Seq[Point], clusters: Seq[LabeledPoint]): Seq[LabeledPoint] = {
-    val pointsByK = KMeans(clusters).predict(points)
-    val newClusters = pointsByK.groupBy(_._1).map{ case (k, kfx) => (k, mean(kfx.map(_._2)))}.toSeq
-    newClusters
-  }
 
 }
 
