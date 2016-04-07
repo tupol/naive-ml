@@ -9,8 +9,6 @@ package object ml {
 
   case class DoubleLabeledPoint(label: Double, point: Point) extends LabeledPoint[Double](label, point)
 
-  case class KMeansLabeledPoint(label: (Double, Double), point: Point) extends LabeledPoint[(Double, Double)](label, point)
-
   abstract class LabeledPoint[L](label: L, point: Point)
 
   trait Predictor[T, P] {

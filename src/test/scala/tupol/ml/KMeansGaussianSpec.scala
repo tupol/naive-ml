@@ -33,7 +33,7 @@ class KMeansGaussianSpec extends FunSuite with Matchers {
 
   test("KMeansGaussian#train test 1 disc K=1") {
 
-    val initialCentroids = Seq(DoubleLabeledPoint(0.0, Array(0.5, 0.5)))
+    val initialCentroids = Seq(ClusterPoint(0, Array(0.5, 0.5)))
 
     val kmeans = KMeansTrainer(1, 500, 0.1).train(initialCentroids, dataPoints1L)
 
@@ -53,10 +53,10 @@ class KMeansGaussianSpec extends FunSuite with Matchers {
     expectedProbabilities.zip(actualProbabilities).forall { case (e, a) => e >= a }
 
     println("Clusters")
-    kmeans.clusterCenters.map(lpointToStr).foreach(println)
+    kmeans.clusterCenters.map(cPointToStr).foreach(println)
     println("Predictions")
     points.foreach { point =>
-      println(f"${lpointToStr(kmeans.predict(point))}  ${kmg.predict(point)}%12.10f  ${pointToStr(kmg.predictByDimension(point))}")
+      println(f"${predPointToStr(kmeans.predict(point))}  ${kmg.predict(point)}%12.10f  ${pointToStr(kmg.predictByDimension(point))}")
     }
   }
   test("KMeansGaussian#train test 1 disc K=2") {
@@ -81,16 +81,16 @@ class KMeansGaussianSpec extends FunSuite with Matchers {
     expectedProbabilities.zip(actualProbabilities).forall { case (e, a) => e >= a }
 
     println("Clusters")
-    kmeans.clusterCenters.map(lpointToStr).foreach(println)
+    kmeans.clusterCenters.map(cPointToStr).foreach(println)
     println("Predictions")
     points.foreach { point =>
-      println(f"${lpointToStr(kmeans.predict(point))}  ${kmg.predict(point)}%12.10f  ${pointToStr(kmg.predictByDimension(point))}")
+      println(f"${predPointToStr(kmeans.predict(point))}  ${kmg.predict(point)}%12.10f  ${pointToStr(kmg.predictByDimension(point))}")
     }
   }
 
   test("KMeansGaussian#train test 2 discs K=2") {
 
-    val initialCentroids = Seq(DoubleLabeledPoint(0.0, Array(0.5, 0.5)), DoubleLabeledPoint(1.0, Array(2.5, 2.5)))
+    val initialCentroids = Seq(ClusterPoint(0, Array(0.5, 0.5)), ClusterPoint(1, Array(2.5, 2.5)))
 
     val kmeans = KMeansTrainer(2, 500, 0.1).train(initialCentroids, dataPoints2L)
 
@@ -110,14 +110,15 @@ class KMeansGaussianSpec extends FunSuite with Matchers {
     expectedProbabilities.zip(actualProbabilities).forall { case (e, a) => e >= a }
 
     println("Clusters")
-    kmeans.clusterCenters.map(lpointToStr).foreach(println)
+    kmeans.clusterCenters.map(cPointToStr).foreach(println)
     println("Predictions")
     points.foreach { point =>
-      println(f"${lpointToStr(kmeans.predict(point))}  ${kmg.predict(point)}%12.10f  ${pointToStr(kmg.predictByDimension(point))}")
+      println(f"${predPointToStr(kmeans.predict(point))}  ${kmg.predict(point)}%12.10f  ${pointToStr(kmg.predictByDimension(point))}")
     }
   }
 
   private def pointToStr(point: Point) = point.map(x => f"$x%+12.10f").mkString("[", ", ", "]")
-  private def lpointToStr(lp: DoubleLabeledPoint) = f"(${lp.label}%.0f ${pointToStr(lp.point)})"
+  private def cPointToStr(lp: ClusterPoint) = f"(${lp.k}%3d ${pointToStr(lp.point)})"
+  private def predPointToStr(lp: KMeansLabeledPoint) = f"(${lp.label._1}%3d (${lp.label._2}%+12.10f) ${pointToStr(lp.point)})"
 
 }

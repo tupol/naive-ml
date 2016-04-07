@@ -3,7 +3,7 @@ package tupol.ml
 /**
  *
  */
-case class KMeansGaussian(kmeans: KMeans, varianceByCluster: Seq[DoubleLabeledPoint]) extends Predictor[Point, Double] {
+case class KMeansGaussian(kmeans: KMeans, varianceByCluster: Seq[ClusterPoint]) extends Predictor[Point, Double] {
 
   override def predict(data: Point): Double = {
     predictByDimension(data).reduce(_ * _)
@@ -12,15 +12,15 @@ case class KMeansGaussian(kmeans: KMeans, varianceByCluster: Seq[DoubleLabeledPo
   def predictByDimension(data: Point): Point = {
 
     val predictedPoint = kmeans.predict(data)
-    val k = predictedPoint.label
+    val k = predictedPoint.label._1
     val point = predictedPoint.point
     val featuresNo = point.size
 
-    val variances = varianceByCluster.map(dlp => (dlp.label, dlp.point)).toMap.get(k) match {
+    val variances = varianceByCluster.map(dlp => (dlp.k, dlp.point)).toMap.get(k) match {
       case Some(x) => x
       case None => throw new Exception(s"Could not find variance for k = $k")
     }
-    val averages = kmeans.clusterCenters.map(dlp => (dlp.label, dlp.point)).toMap.get(k) match {
+    val averages = kmeans.clusterCenters.map(dlp => (dlp.k, dlp.point)).toMap.get(k) match {
       case Some(x) => x
       case None => throw new Exception(s"Could not find centroid for k = $k")
     }
@@ -40,13 +40,13 @@ case class KMeansGaussianTrainer(kmeans: KMeans) extends Trainer[Point, KMeansGa
 
   override def train(data: Seq[Point]): KMeansGaussian = {
     val clusteredData = kmeans.predict(data)
-    val varianceByK = clusteredData.map(dlp => (dlp.label, dlp.point)).groupBy(_._1).map {
+    val varianceByK = clusteredData.map(dlp => (dlp.label._1, dlp.point)).groupBy(_._1).map {
       case (k, kfx) =>
-        val centroid = kmeans.clusterCenters.map(dlp => (dlp.label, dlp.point)).toMap.get(k) match {
+        val centroid = kmeans.clusterCenters.map(cc => (cc.k, cc.point)).toMap.get(k) match {
           case Some(x) => x
           case None => throw new Exception(s"Could not find centroid for k = $k")
         }
-        DoubleLabeledPoint(k, kfx.map(_._2).variance(centroid))
+        ClusterPoint(k, kfx.map(_._2).variance(centroid))
     }.toSeq
     KMeansGaussian(kmeans, varianceByK)
   }

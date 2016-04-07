@@ -2,20 +2,25 @@ package tupol.ml
 
 import scala.util.Random
 
+case class KMeansLabeledPoint(label: (Int, Double), point: Point) extends LabeledPoint[(Int, Double)](label, point)
+
+case class ClusterPoint(k: Int, point: Point) extends LabeledPoint[Int](k, point)
+
 /**
  *
  */
-case class KMeans(clusterCenters: Seq[DoubleLabeledPoint]) extends Predictor[Point, DoubleLabeledPoint] {
+case class KMeans(clusterCenters: Seq[ClusterPoint]) extends Predictor[Point, KMeansLabeledPoint] {
 
   /**
    * Predict the cluster a point belongs to.
    *
    * @param point
    */
-  def predict(point: Point): DoubleLabeledPoint = {
-    val k = clusterCenters.map(k => (k.label, point.distance2(k.point))).minBy(_._2)._1
-    DoubleLabeledPoint(k, point)
+  def predict(point: Point): KMeansLabeledPoint = {
+    val (pk, distance) = clusterCenters.map(cc => (cc.k, point.distance2(cc.point))).minBy(_._2)
+    KMeansLabeledPoint((pk, distance), point)
   }
+
 }
 
 object KMeans {
@@ -69,11 +74,11 @@ object KMeans {
 
 object KMeansTrainer {
 
-  def initialize(k: Int, points: Seq[Point]): Seq[DoubleLabeledPoint] = {
+  def initialize(k: Int, points: Seq[Point]): Seq[ClusterPoint] = {
     require(k > 0 && k < points.size)
     Random.shuffle((0 until points.size).toList)
       .foldLeft(Seq[Point]())((clusters, point) => points(point) +: clusters)
-      .take(k).zipWithIndex.map(_.swap).map(t => DoubleLabeledPoint(t._1.toDouble, t._2))
+      .take(k).zipWithIndex.map(_.swap).map(t => ClusterPoint(t._1, t._2))
   }
 }
 
@@ -97,9 +102,9 @@ case class KMeansTrainer(k: Int, maxIter: Int, tolerance: Double) extends Traine
    * @param dataPoints
    * @return
    */
-  def train(initialCentroids: Seq[DoubleLabeledPoint], dataPoints: Seq[Point]): KMeans = {
+  def train(initialCentroids: Seq[ClusterPoint], dataPoints: Seq[Point]): KMeans = {
 
-    def train(oldCentroids: Seq[DoubleLabeledPoint], step: Int, done: Boolean): Seq[DoubleLabeledPoint] = {
+    def train(oldCentroids: Seq[ClusterPoint], step: Int, done: Boolean): Seq[ClusterPoint] = {
       if (step == maxIter - 1 || done)
         oldCentroids
       else {
@@ -109,15 +114,15 @@ case class KMeansTrainer(k: Int, maxIter: Int, tolerance: Double) extends Traine
       }
     }
 
-    def centroidsMovements(oldCentroids: Seq[DoubleLabeledPoint], newCentroids: Seq[DoubleLabeledPoint]) =
+    def centroidsMovements(oldCentroids: Seq[ClusterPoint], newCentroids: Seq[ClusterPoint]) =
       newCentroids.map {
         case dlp =>
-          oldCentroids.map(x => (x.label, x.point)).toMap.get(dlp.label).map(x => x.distance2(dlp.point))
+          oldCentroids.map(x => (x.k, x.point)).toMap.get(dlp.k).map(x => x.distance2(dlp.point))
       }.filter(_.isDefined).map(_.get)
 
-    def newControids(points: Seq[Point], clusters: Seq[DoubleLabeledPoint]): Seq[DoubleLabeledPoint] = {
+    def newControids(points: Seq[Point], clusters: Seq[ClusterPoint]): Seq[ClusterPoint] = {
       val pointsByK = KMeans(clusters).predict(points)
-      val newClusters = pointsByK.groupBy(_.label).map { case (k, kfx) => DoubleLabeledPoint(k, mean(kfx.map(_.point))) }.toSeq
+      val newClusters = pointsByK.groupBy(_.label._1).map { case (k, kfx) => ClusterPoint(k, mean(kfx.map(_.point))) }.toSeq
       newClusters
     }
 
