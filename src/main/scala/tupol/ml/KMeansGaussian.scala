@@ -1,9 +1,9 @@
 package tupol.ml
 
 /**
-  *
-  */
-case class KMeansGaussian(kmeans: KMeans, varianceByCluster: Seq[LabeledPoint]) extends Predictor[Point, Double] {
+ *
+ */
+case class KMeansGaussian(kmeans: KMeans, varianceByCluster: Seq[DoubleLabeledPoint]) extends Predictor[Point, Double] {
 
   override def predict(data: Point): Double = {
     predictByDimension(data).reduce(_ * _)
@@ -12,15 +12,15 @@ case class KMeansGaussian(kmeans: KMeans, varianceByCluster: Seq[LabeledPoint]) 
   def predictByDimension(data: Point): Point = {
 
     val predictedPoint = kmeans.predict(data)
-    val k = predictedPoint._1
-    val point = predictedPoint._2
+    val k = predictedPoint.label
+    val point = predictedPoint.point
     val featuresNo = point.size
 
-    val variances = varianceByCluster.toMap.get(k) match {
+    val variances = varianceByCluster.map(dlp => (dlp.label, dlp.point)).toMap.get(k) match {
       case Some(x) => x
       case None => throw new Exception(s"Could not find variance for k = $k")
     }
-    val averages = kmeans.clusterCenters.toMap.get(k) match {
+    val averages = kmeans.clusterCenters.map(dlp => (dlp.label, dlp.point)).toMap.get(k) match {
       case Some(x) => x
       case None => throw new Exception(s"Could not find centroid for k = $k")
     }
@@ -30,8 +30,7 @@ case class KMeansGaussian(kmeans: KMeans, varianceByCluster: Seq[LabeledPoint]) 
       val variance = if (variances(f) == 0) Double.MinValue else variances(f)
       import math._
       val probability = (1 / (sqrt(2 * Pi * variance)) *
-        math.exp(-sqerr / (2 * variance))
-        )
+        math.exp(-sqerr / (2 * variance)))
       probability
     }.toArray
   }
@@ -41,12 +40,13 @@ case class KMeansGaussianTrainer(kmeans: KMeans) extends Trainer[Point, KMeansGa
 
   override def train(data: Seq[Point]): KMeansGaussian = {
     val clusteredData = kmeans.predict(data)
-    val varianceByK = clusteredData.groupBy(_._1).map{ case (k, kfx) =>
-      val centroid = kmeans.clusterCenters.toMap.get(k) match {
-        case Some(x) => x
-        case None => throw new Exception(s"Could not find centroid for k = $k")
-      }
-      (k, kfx.map(_._2).variance(centroid))
+    val varianceByK = clusteredData.map(dlp => (dlp.label, dlp.point)).groupBy(_._1).map {
+      case (k, kfx) =>
+        val centroid = kmeans.clusterCenters.map(dlp => (dlp.label, dlp.point)).toMap.get(k) match {
+          case Some(x) => x
+          case None => throw new Exception(s"Could not find centroid for k = $k")
+        }
+        DoubleLabeledPoint(k, kfx.map(_._2).variance(centroid))
     }.toSeq
     KMeansGaussian(kmeans, varianceByK)
   }

@@ -1,11 +1,11 @@
 package tupol.ml
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.{ FunSuite, Matchers }
 import utils.ClusterGen2D
 
 /**
-  *
-  */
+ *
+ */
 class KMeansGaussianSpec extends FunSuite with Matchers {
 
   import ClusterGen2D._
@@ -20,11 +20,10 @@ class KMeansGaussianSpec extends FunSuite with Matchers {
   )
 
   val dataPoints3 = Seq(
-        Array(0.0, 0.0),
-        Array(1.0, 1.0),
-        Array(0.0, 1.0)
-      )
-
+    Array(0.0, 0.0),
+    Array(1.0, 1.0),
+    Array(0.0, 1.0)
+  )
 
   val dataPoints1L = disc(1000, Array(0.0, 0.0))
 
@@ -32,10 +31,9 @@ class KMeansGaussianSpec extends FunSuite with Matchers {
 
   val dataPoints3L = (disc(1000, Array(0.0, 0.0)) ++ disc(1000, Array(2.0, 0.0)) ++ disc(1000, Array(0.0, 2.0)))
 
-
   test("KMeansGaussian#train test 1 disc K=1") {
 
-    val initialCentroids = Seq((0.0, Array(0.5, 0.5)))
+    val initialCentroids = Seq(DoubleLabeledPoint(0.0, Array(0.5, 0.5)))
 
     val kmeans = KMeansTrainer(1, 500, 0.1).train(initialCentroids, dataPoints1L)
 
@@ -63,7 +61,7 @@ class KMeansGaussianSpec extends FunSuite with Matchers {
   }
   test("KMeansGaussian#train test 1 disc K=2") {
 
-    val initialCentroids = Seq((0.0, Array(0.5, 0.5)))
+    val initialCentroids = Seq(DoubleLabeledPoint(0.0, Array(0.5, 0.5)))
 
     val kmeans = KMeansTrainer(2, 500, 0.1).train(dataPoints1L)
 
@@ -92,7 +90,7 @@ class KMeansGaussianSpec extends FunSuite with Matchers {
 
   test("KMeansGaussian#train test 2 discs K=2") {
 
-    val initialCentroids = Seq((0.0, Array(0.5, 0.5)), (1.0, Array(2.5, 2.5)))
+    val initialCentroids = Seq(DoubleLabeledPoint(0.0, Array(0.5, 0.5)), DoubleLabeledPoint(1.0, Array(2.5, 2.5)))
 
     val kmeans = KMeansTrainer(2, 500, 0.1).train(initialCentroids, dataPoints2L)
 
@@ -119,8 +117,7 @@ class KMeansGaussianSpec extends FunSuite with Matchers {
     }
   }
 
-
   private def pointToStr(point: Point) = point.map(x => f"$x%+12.10f").mkString("[", ", ", "]")
-  private def lpointToStr(lp: LabeledPoint) = f"(${lp._1}%.0f ${pointToStr(lp._2)})"
+  private def lpointToStr(lp: DoubleLabeledPoint) = f"(${lp.label}%.0f ${pointToStr(lp.point)})"
 
 }

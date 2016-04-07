@@ -1,12 +1,17 @@
 package tupol
 
 /**
-  *
-  */
+ *
+ */
 package object ml {
 
   type Point = Array[Double]
-  type LabeledPoint = (Double, Point)
+
+  case class DoubleLabeledPoint(label: Double, point: Point) extends LabeledPoint[Double](label, point)
+
+  case class KMeansLabeledPoint(label: (Double, Double), point: Point) extends LabeledPoint[(Double, Double)](label, point)
+
+  abstract class LabeledPoint[L](label: L, point: Point)
 
   trait Predictor[T, P] {
     def predict(data: T): P
@@ -24,13 +29,12 @@ package object ml {
 
     def *(thatPoint: Point) = {
       require(thisPoint.size == thatPoint.size)
-      thisPoint.zip(thatPoint).map{case(t, x) => t * x}.sum
+      thisPoint.zip(thatPoint).map { case (t, x) => t * x }.sum
     }
-
 
     def -(thatPoint: Point) = {
       require(thisPoint.size == thatPoint.size)
-      thisPoint.zip(thatPoint).map{case(t, x) => t - x}
+      thisPoint.zip(thatPoint).map { case (t, x) => t - x }
     }
 
     def /(scalar: Double) = thisPoint.map(_ / scalar)
@@ -60,7 +64,7 @@ package object ml {
       sumByDimension / size
     }
 
-    lazy val sumByDimension : Point = {
+    lazy val sumByDimension: Point = {
       require(size > 0)
       points.reduce((v1, v2) => v1.zip(v2).map(x => x._1 + x._2))
     }
@@ -71,17 +75,17 @@ package object ml {
 
     def normalize() = {
       val sigma = variance.map(math.sqrt)
-      points.map(v => v.zip(mean).zip(sigma).map{case ((x, mu), sig) => (x - mu) / sig})
+      points.map(v => v.zip(mean).zip(sigma).map { case ((x, mu), sig) => (x - mu) / sig })
     }
 
   }
 
   /**
-    * Square distance between two vectors
-    * @param vector1
-    * @param vector2
-    * @return
-    */
+   * Square distance between two vectors
+   * @param vector1
+   * @param vector2
+   * @return
+   */
   def distance2(vector1: Point, vector2: Point): Double = {
     vector1.zip(vector2).map(x => (x._2 - x._1) * (x._2 - x._1)).sum
   }

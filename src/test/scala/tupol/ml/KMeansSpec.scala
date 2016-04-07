@@ -1,11 +1,11 @@
 package tupol.ml
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.{ FunSuite, Matchers }
 import utils.ClusterGen2D
 
 /**
-  *
-  */
+ *
+ */
 class KMeansSpec extends FunSuite with Matchers {
 
   import ClusterGen2D._
@@ -21,17 +21,14 @@ class KMeansSpec extends FunSuite with Matchers {
   )
 
   val dataPoints3 = Seq(
-        Array(0.0, 0.0),
-        Array(1.0, 1.0),
-        Array(0.0, 1.0)
-      )
+    Array(0.0, 0.0),
+    Array(1.0, 1.0),
+    Array(0.0, 1.0)
+  )
 
   val dataPoints2L = (disc(100, Array(0.0, 0.0)) ++ disc(100, Array(2.0, 2.0)))
 
   val dataPoints3L = (disc(100, Array(0.0, 0.0)) ++ disc(100, Array(2.0, 0.0)) ++ disc(100, Array(0.0, 2.0)))
-
-
-
 
   test("KMeans#mean test 1") {
 
@@ -51,7 +48,7 @@ class KMeansSpec extends FunSuite with Matchers {
 
   test("KMeans#mean test 3") {
 
-    val expected = Array(1/3., 2/3.)
+    val expected = Array(1 / 3., 2 / 3.)
     val actual = mean(dataPoints3)
 
     assert(actual === expected)
@@ -69,8 +66,8 @@ class KMeansSpec extends FunSuite with Matchers {
     val actual = initialize(k, dataPoints3)
 
     assert(actual.size === k)
-    assert(actual.map(_._2).toSeq.size === k)
-    assert(actual.forall(x => dataPoints3.contains(x._2)))
+    assert(actual.toSet.size === k)
+    assert(actual.forall(x => dataPoints3.contains(x.point)))
   }
 
   test("KMeans#initialize test k = 2") {
@@ -79,8 +76,8 @@ class KMeansSpec extends FunSuite with Matchers {
     val actual = initialize(k, dataPoints3)
 
     assert(actual.size === k)
-    assert(actual.map(_._2).toSeq.size === k)
-    assert(actual.forall(x => dataPoints3.contains(x._2)))
+    assert(actual.toSet.size === k)
+    assert(actual.forall(x => dataPoints3.contains(x.point)))
   }
 
   test("KMeans#initialize test k = 3") {
@@ -89,8 +86,8 @@ class KMeansSpec extends FunSuite with Matchers {
     val actual = initialize(k, dataPoints3L)
 
     assert(actual.size === k)
-    assert(actual.map(_._2).toSeq.size === k)
-    assert(actual.forall(x => dataPoints3L.contains(x._2)))
+    assert(actual.toSet.size === k)
+    assert(actual.forall(x => dataPoints3L.contains(x.point)))
   }
 
   test("KMeans#initialize test k = 200") {
@@ -99,11 +96,9 @@ class KMeansSpec extends FunSuite with Matchers {
     val actual = initialize(k, dataPoints3L)
 
     assert(actual.size === k)
-    assert(actual.map(_._2).toSeq.size === k)
-    assert(actual.forall(x => dataPoints3L.contains(x._2)))
+    assert(actual.toSet.size === k)
+    assert(actual.forall(x => dataPoints3L.contains(x.point)))
   }
-
-
 
   test("KMeans#distance2 test 1") {
 
@@ -142,7 +137,7 @@ class KMeansSpec extends FunSuite with Matchers {
 
     val expected = Seq(Array(0.0, 0.0), Array(2.0, 2.0)).sortWith((a, b) =>
       a.zip(b).find(t => t._1 < t._2).isDefined)
-    val actual = KMeansTrainer(2, 100, 0.1).train(dataPoints2L).clusterCenters.map(_._2).sortWith((a, b) =>
+    val actual = KMeansTrainer(2, 100, 0.1).train(dataPoints2L).clusterCenters.map(_.point).sortWith((a, b) =>
       a.zip(b).find(t => t._1 < t._2).isDefined)
 
     val epsilon = 0.01
@@ -154,7 +149,7 @@ class KMeansSpec extends FunSuite with Matchers {
 
     val expected = Seq(Array(0.0, 0.0), Array(1.0, 0.0), Array(3.0, 0.0)).sortWith((a, b) =>
       a.zip(b).find(t => t._1 < t._2).isDefined)
-    val actual = KMeansTrainer(3, 100, 0.1).train(dataPoints3L).clusterCenters.map(_._2).sortWith((a, b) =>
+    val actual = KMeansTrainer(3, 100, 0.1).train(dataPoints3L).clusterCenters.map(_.point).sortWith((a, b) =>
       a.zip(b).find(t => t._1 < t._2).isDefined)
 
     val epsilon = 0.01
@@ -187,8 +182,7 @@ class KMeansSpec extends FunSuite with Matchers {
     )
 
     val expectedK = 140
-    KMeans.chooseK(sses, 0.005, 200.) should be (expectedK)
+    KMeans.chooseK(sses, 0.005, 200.) should be(expectedK)
   }
-
 
 }
