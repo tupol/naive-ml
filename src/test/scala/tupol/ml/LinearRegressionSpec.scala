@@ -85,5 +85,29 @@ class LinearRegressionSpec extends FunSuite with Matchers {
     cost(data, rtheta.theta) should be (expectedCost)
   }
 
+  test("LinearRegressionOptimized#train theta is non zero") {
+    val data = Seq(
+      (1.0, Array(1.0, 5.0)),
+      (6.0, Array(1.0, 2.0))
+    )
+    val theta =  Array(0.5, 0.5)
+    val maxIter = 10
+    val learningRate = 1
+    val tolerance = 0.1
+
+    val expectedTheta = Array(1.7098632193403809, 0.19229353765009757)
+    val expectedCost = 4.5116663759254
+
+    val rtheta = LinearRegressionOptimizedTrainer(theta, maxIter, learningRate, tolerance, LinearRegression.hypothesys).train(data)
+
+//    rtheta.theta should be (expectedTheta)
+//
+//    cost(data, rtheta.theta) should be (expectedCost)
+
+    println(rtheta.thetaHistory.size)
+    rtheta.thetaHistory.map(_.mkString(", ")).foreach(println)
+    rtheta.thetaHistory.map(LinearRegression.cost(data, _)).foreach(println)
+  }
+
 
 }

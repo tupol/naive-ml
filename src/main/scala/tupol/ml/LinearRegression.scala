@@ -5,13 +5,15 @@ package tupol.ml
   */
 case class LinearRegression(thetaHistory: Seq[Point]) extends Predictor[Point, LabeledPoint] {
 
+  import LinearRegression._
+
   def this(theta: Point) = this(Seq(theta))
 
   lazy val theta = thetaHistory.head
 
   def predict(point: Point): LabeledPoint = {
     require (point.size == theta.size || point.size + 1 == theta.size)
-    val pred = LinearRegression.hypothesys(point, theta)
+    val pred = hypothesys(point, theta)
     (pred, point)
   }
 
@@ -26,9 +28,11 @@ object LinearRegression {
       theta * point
   }
 
+  def sse(data: Seq[LabeledPoint], theta: Point) =
+    errors(data, theta).map(e => e * e).sum
+
   def cost(data: Seq[LabeledPoint], theta: Point) = {
-    val sqrErrors = errors(data, theta).map(e => e * e)
-    sqrErrors.sum / data.size / 2
+    sse(data, theta) / data.size / 2
   }
 
   def errors(data: Seq[LabeledPoint], theta: Point) = {
@@ -46,7 +50,7 @@ case class LinearRegressionTrainer(theta: Point, maxIter: Int = 10, learningRate
   def train(data: Seq[LabeledPoint]) = {
 
     def train(thetas: Seq[Point], step: Int, done: Boolean): Seq[Point] = {
-      if(step == maxIter || done)
+      if(step == maxIter - 1 || done)
         thetas
       else {
         val oldTheta = thetas.head
@@ -73,7 +77,7 @@ case class LinearRegressionOptimizedTrainer(theta: Point, maxIter: Int = 10, lea
   def train(data: Seq[LabeledPoint]) = {
 
     def train(thetas: Seq[Point], step: Int, learningRate: Double, done: Boolean): Seq[Point] = {
-      if(step == maxIter || done)
+      if(step == maxIter - 1 || done)
         thetas
       else {
         val oldTheta = thetas.head
@@ -84,8 +88,8 @@ case class LinearRegressionOptimizedTrainer(theta: Point, maxIter: Int = 10, lea
         val newCost = LinearRegression.cost(data, newTheta)
 
         if(newCost - oldCost > 0) {
-          // the cost is increasing, so let's reduce hte learning rate
-          train(newTheta +: thetas, step+1, learningRate/3, false)
+          // the cost is increasing, so let's reduce the learning rate, but change nothing else
+          train(thetas, step, learningRate/3, false)
         } else {
           val done = oldCost - newCost <= tolerance
           train(newTheta +: thetas, step+1, learningRate, done)
