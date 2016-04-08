@@ -1,6 +1,7 @@
-package tupol.ml
+package tupol.ml.regression
 
 import org.scalatest.{ FunSuite, Matchers }
+import tupol.ml.DoubleLabeledPoint
 
 /**
  *

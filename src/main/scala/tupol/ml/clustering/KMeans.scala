@@ -1,4 +1,6 @@
-package tupol.ml
+package tupol.ml.clustering
+
+import tupol.ml._
 
 import scala.util.Random
 
@@ -31,7 +33,7 @@ object KMeans {
    * The idea is that a sequence of models will be generated over a range of k (e.g. from 10 to 100 with a step of 5) and calculate a quality parameter for each model (like wssse).
    * With this data we can generate a sequence of tuples of k and quality measurement, which we use to pick the best acceptable k.
    *
-   * @param k_measure A sequence of tupples of k and sse representing evolution of a measurement (e.g. WSSSE) over k.
+   * @param k_measure A sequence of tuples of k and sse representing evolution of a measurement (e.g. WSSSE) over k.
    *              It is recommended to use evenly spread ks (like 10, 20, 30, 40....)
    * @param epsilon The acceptable variance ratio of the measurements between two consecutive ks;.
    *                  For example, how mny times smaller is wssse(k+1) compared of wssse(k).

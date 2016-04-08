@@ -1,4 +1,6 @@
-package tupol.ml
+package tupol.ml.regression
+
+import tupol.ml._
 
 /**
  *

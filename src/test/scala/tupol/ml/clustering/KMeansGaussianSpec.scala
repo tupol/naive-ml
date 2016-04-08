@@ -1,6 +1,7 @@
-package tupol.ml
+package tupol.ml.clustering
 
 import org.scalatest.{ FunSuite, Matchers }
+import tupol.ml._
 import utils.ClusterGen2D
 
 /**
@@ -50,16 +51,16 @@ class KMeansGaussianSpec extends FunSuite with Matchers {
     val expectedProbabilities = Seq(1.0, 0.6, 0.005, 0.000009, 0.0000009)
     val actualProbabilities = points.map(kmg.predict)
 
-    expectedProbabilities.zip(actualProbabilities).forall { case (e, a) => e >= a }
+    expectedProbabilities.zip(actualProbabilities.map(_.probability)).forall { case (e, a) => e >= a }
 
     println("Clusters")
     kmeans.clusterCenters.map(cPointToStr).foreach(println)
     println("Predictions")
     points.foreach { point =>
-      println(f"${predPointToStr(kmeans.predict(point))}  ${kmg.predict(point)}%12.10f  ${pointToStr(kmg.predictByDimension(point))}")
+      println(f"${predPointToStr(kmeans.predict(point))}  ${kmg.predict(point).probability}%12.10f  ${(kmg.predict(point))}")
     }
   }
-  test("KMeansGaussian#train test 1 disc K=2") {
+  test("KMeansGaussian#train test probabilities for 1 disc K=2") {
 
     val initialCentroids = Seq(DoubleLabeledPoint(0.0, Array(0.5, 0.5)))
 
@@ -78,17 +79,17 @@ class KMeansGaussianSpec extends FunSuite with Matchers {
     val expectedProbabilities = Seq(1.0, 0.6, 0.005, 0.000009, 0.0000009)
     val actualProbabilities = points.map(kmg.predict)
 
-    expectedProbabilities.zip(actualProbabilities).forall { case (e, a) => e >= a }
+    expectedProbabilities.zip(actualProbabilities.map(_.probability)).forall { case (e, a) => e >= a }
 
     println("Clusters")
     kmeans.clusterCenters.map(cPointToStr).foreach(println)
     println("Predictions")
     points.foreach { point =>
-      println(f"${predPointToStr(kmeans.predict(point))}  ${kmg.predict(point)}%12.10f  ${pointToStr(kmg.predictByDimension(point))}")
+      println(f"${predPointToStr(kmeans.predict(point))}  ${kmg.predict(point).probability}%12.10f  ${(kmg.predict(point))}")
     }
   }
 
-  test("KMeansGaussian#train test 2 discs K=2") {
+  test("KMeansGaussian#train test probabilities for 2 discs K=2") {
 
     val initialCentroids = Seq(ClusterPoint(0, Array(0.5, 0.5)), ClusterPoint(1, Array(2.5, 2.5)))
 
@@ -107,13 +108,13 @@ class KMeansGaussianSpec extends FunSuite with Matchers {
     val expectedProbabilities = Seq(1.0, 0.6, 0.005, 0.000009, 0.0000009)
     val actualProbabilities = points.map(kmg.predict)
 
-    expectedProbabilities.zip(actualProbabilities).forall { case (e, a) => e >= a }
+    expectedProbabilities.zip(actualProbabilities.map(_.probability)).forall { case (e, a) => e >= a }
 
     println("Clusters")
     kmeans.clusterCenters.map(cPointToStr).foreach(println)
     println("Predictions")
     points.foreach { point =>
-      println(f"${predPointToStr(kmeans.predict(point))}  ${kmg.predict(point)}%12.10f  ${pointToStr(kmg.predictByDimension(point))}")
+      println(f"${predPointToStr(kmeans.predict(point))}  ${kmg.predict(point).probability}%12.10f  ${(kmg.predict(point))}")
     }
   }
 

@@ -43,6 +43,8 @@ package object ml {
     def distance2ByDimension(thatPoint: Point): Point = {
       thisPoint.zip(thatPoint).map(x => (x._2 - x._1) * (x._2 - x._1))
     }
+
+    override def toString() = thisPoint.mkString("[", ", ", "]")
   }
 
   implicit class PointsOps(points: Seq[Point]) {
@@ -84,11 +86,11 @@ package object ml {
    * @param vector2
    * @return
    */
-  def distance2(vector1: Point, vector2: Point): Double = {
+  private[ml] def distance2(vector1: Point, vector2: Point): Double = {
     vector1.zip(vector2).map(x => (x._2 - x._1) * (x._2 - x._1)).sum
   }
 
-  def mean(vectors: Seq[Point]): Point = {
+  private[ml] def mean(vectors: Seq[Point]): Point = {
     require(vectors.size > 0)
     vectors.reduce((v1, v2) => v1.zip(v2).map(x => x._1 + x._2))
       .map(x => x / vectors.size)

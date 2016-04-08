@@ -12,7 +12,9 @@ scalaVersion := "2.10.4"
 
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.4" % "test",
-  "org.scalanlp" %% "breeze" % "0.12"
+  "org.scalanlp" %% "breeze" % "0.12",
+  "org.scalanlp" %% "breeze-natives" % "0.12",
+  "org.scalanlp" %% "breeze-viz" % "0.12"
 )
 
 // ------------------------------

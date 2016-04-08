@@ -1,6 +1,7 @@
-package tupol.ml
+package tupol.ml.clustering
 
 import org.scalatest.{ FunSuite, Matchers }
+import tupol.ml._
 import utils.ClusterGen2D
 
 /**
