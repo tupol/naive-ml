@@ -1,4 +1,4 @@
-package utils
+package tupol.ml.utils
 
 /**
  * Generate 2D cluster data in different shapes
