@@ -38,17 +38,20 @@ I've made a lot of measurements in the [sparx-mllib](https://github.com/tupol/sp
 
 The simple choose K function takes the following arguments:
 
-**k_measure** A sequence of tuples of k and sse representing evolution of a measurement (e.g. SSE: Sum of Squared Errors) over k.
+**k_measure** 
+A sequence of tuples of k and sse representing evolution of a measurement (e.g. SSE: Sum of Squared Errors) over k.
 It is recommended to use evenly spread ks (like 2, 10, 20, 30, 40....). 
 At the same time it is recommended that the first K to be the smallest acceptable K, which is 2.
 
-**epsilon** The acceptable decrease ratio (derivative) of the measurements for every k. 
+**epsilon** 
+The acceptable decrease ratio (derivative) of the measurements for every k. 
 From the integration test the optimal value seems to be 0.0003, which works very well for small values of K (smaller than 10), and reasonably well for large values of K.
 
 
-**maxK** Having a K equal or greater than the data set itself does not make a lot of sense, so as an extra measure, we specify it.
+**maxK** 
+Having a K equal or greater than the data set itself does not make a lot of sense, so as an extra measure, we specify it.
 
-```
+```scala
 def chooseK(k_measure: Seq[(Int, Double)], epsilon: Double = 0.005, maxK: Int = 500): Int
 ```
  
@@ -67,12 +70,29 @@ For each K in the sequence above, a model is generated, by training multiple tim
 
 The step before will essentially generate a sequence of measurements for different Ks, so the next natural step is to call the `chooseK()` function and find K,
 
-```
+```scala
 def guessK(data: Seq[Point], runs: Int = 3, kMeansTrainerFactory: (Int) => KMeansTrainer, epsilon: Double = 0.05, maxK: Int = 500)
 ```
- 
-The same limitations pointed out at the `chooseK()` apply here as well, so the algorithm will not produce very good results for when the actual number of visible clusters is small.
- 
+
+The simple guessK function takes the following arguments:
+
+**data**
+Training data
+
+**runs**
+How many times should the training run before choosing the best model
+
+**kMeansTrainerFactory**
+
+A function that creates KMeans trainers besed on a given K
+
+**epsilon**
+The desired measurement decrease (derivative)
+
+**maxK**
+Just in case, have a stopper value for K.
+
+
 ## TODO
 
 - [ ] improve the unit tests and documentation

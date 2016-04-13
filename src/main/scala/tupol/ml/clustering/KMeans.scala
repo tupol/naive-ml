@@ -94,18 +94,18 @@ object KMeans {
   }
 
   /**
-    * This is the best attempt I found so far to guess K.
-    *
-    * Until now the best guess come for an epsilon = 0.0003, which is set as default.
-    *
-    * @param data Training data
-    * @param runs How many times should a model be generated for the same input parameters; I recommend a minimum of 3
-    * @param kMeansTrainerFactory A function that returns a KMeansTrainer, given a K as an input
-    * @param epsilon The acceptable decrease ratio (derivative) of the measurements for every k.
-    * @param maxK Having a K equal or greater than the data set itself does not make a lot of sense, so as an extra measure, we specify it.
-    *
-    * @return The best guess for K
-    */
+   * This is the best attempt I found so far to guess K.
+   *
+   * Until now the best guess come for an epsilon = 0.0003, which is set as default.
+   *
+   * @param data Training data
+   * @param runs How many times should a model be generated for the same input parameters; I recommend a minimum of 3
+   * @param kMeansTrainerFactory A function that returns a KMeansTrainer, given a K as an input
+   * @param epsilon The acceptable decrease ratio (derivative) of the measurements for every k.
+   * @param maxK Having a K equal or greater than the data set itself does not make a lot of sense, so as an extra measure, we specify it.
+   *
+   * @return The best guess for K
+   */
   def guessK(data: Seq[Point], runs: Int = 3, kMeansTrainerFactory: (Int) => KMeansTrainer, epsilon: Double = 0.0003, maxK: Int = 500) = {
 
     val ks = (
@@ -125,13 +125,13 @@ object KMeans {
   }
 
   /**
-    * Choose the best model, by running the prediction `runs` times and picking the model with the minimum SSE.
-    *
-    * @param trainingData Training data
-    * @param runs
-    * @param kMeansTrainer
-    * @return
-    */
+   * Choose the best model, by running the prediction `runs` times and picking the model with the minimum SSE.
+   *
+   * @param trainingData Training data
+   * @param runs
+   * @param kMeansTrainer
+   * @return
+   */
   def bestModel(trainingData: Seq[Point], runs: Int, kMeansTrainer: => KMeansTrainer): (KMeans, Double) = {
     (0 until runs).map(_ => {
       val kmeans = kMeansTrainer.train(trainingData)
@@ -162,12 +162,12 @@ object KMeansTrainer {
 }
 
 /**
-  * Traininer for KMeans predictor
-  * @param k
-  * @param maxIter
-  * @param tolerance
-  * @param seed
-  */
+ * Traininer for KMeans predictor
+ * @param k
+ * @param maxIter
+ * @param tolerance
+ * @param seed
+ */
 case class KMeansTrainer(k: Int, maxIter: Int = 100, tolerance: Double = 1E-6, seed: Long = Random.nextLong) extends Trainer[Point, KMeans] {
 
   import KMeansTrainer._

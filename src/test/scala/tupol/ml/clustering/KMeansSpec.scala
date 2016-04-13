@@ -27,9 +27,7 @@ class KMeansSpec extends FunSuite with Matchers {
     Array(0.0, 1.0)
   )
 
-  val dataPoints2L = disc(100, Array(0.0, 0.0)) ++ disc(100, Array(0.0, 2.0))
-
-  val dataPoints3L = dataPoints2L ++ disc(100, Array(2.0, 2.0))
+  def dataPoints(centroids: Seq[Point]): Seq[Point] = centroids.flatMap(p => disc(200, p, 0.5))
 
   test("KMeans#mean test 1") {
 
@@ -83,22 +81,26 @@ class KMeansSpec extends FunSuite with Matchers {
 
   test("KMeans#initialize test k = 3") {
 
-    val k = 3
-    val actual = initialize(k, dataPoints3L)
+    val kCenters = Seq(Array(0.0, 0.0), Array(0.0, 2.0), Array(2.0, 0.0))
+    val k = kCenters.size
+    val clusters = dataPoints(kCenters)
+    val actual = initialize(k, clusters)
 
     assert(actual.size === k)
     assert(actual.toSet.size === k)
-    assert(actual.forall(x => dataPoints3L.contains(x.point)))
+    assert(actual.forall(x => clusters.contains(x.point)))
   }
 
   test("KMeans#initialize test k = 200") {
 
     val k = 200
-    val actual = initialize(k, dataPoints3L)
+    val kCenters = Seq(Array(0.0, 0.0), Array(0.0, 2.0), Array(2.0, 0.0))
+    val clusters = dataPoints(kCenters)
+    val actual = initialize(k, clusters)
 
     assert(actual.size === k)
     assert(actual.toSet.size === k)
-    assert(actual.forall(x => dataPoints3L.contains(x.point)))
+    assert(actual.forall(x => clusters.contains(x.point)))
   }
 
   test("KMeans#distance2 test 1") {
@@ -136,12 +138,15 @@ class KMeansSpec extends FunSuite with Matchers {
 
   test("KMeans#train test 2 discs") {
 
-    val expected = Seq(Array(0.0, 0.0), Array(0.0, 2.0))
-    val actual = KMeansTrainer(2, 200, 1E-6).train(dataPoints2L).clusterCenters.map(_.point)
+    val kCenters = Seq(Array(0.0, 0.0), Array(0.0, 2.0))
+    val k = kCenters.size
+    val clusters = dataPoints(kCenters)
+
+    val actual = KMeansTrainer(2, 200, 1E-6).train(clusters).clusterCenters.map(_.point)
 
     val epsilon = 0.1
 
-    expected foreach { e =>
+    kCenters foreach { e =>
       val (cc, distance) = actual.map(p => (p, math.sqrt(distance2(p, e)))).sortWith(_._2 < _._2).head
       println(s"For expected centroid ${e.mkString("[", ",", "]")}, the closest predicted cluster was found " +
         s"at ${cc.mkString("[", ",", "]")}; distance=$distance.")
@@ -152,12 +157,14 @@ class KMeansSpec extends FunSuite with Matchers {
 
   test("KMeans#train test 3 discs") {
 
-    val expected = Seq(Array(0.0, 0.0), Array(0.0, 2.0), Array(2.0, 2.0))
-    val actual = KMeansTrainer(3, 200, 1E-6).train(dataPoints3L).clusterCenters.map(_.point)
+    val kCenters = Seq(Array(0.0, 0.0), Array(0.0, 2.0), Array(2.0, 2.0))
+    val k = kCenters.size
+    val clusters = dataPoints(kCenters)
+    val actual = KMeansTrainer(3, 200, 1E-6).train(clusters).clusterCenters.map(_.point)
 
     val epsilon = 0.1
 
-    expected foreach { e =>
+    kCenters foreach { e =>
       val (cc, distance) = actual.map(p => (p, math.sqrt(distance2(p, e)))).sortWith(_._2 < _._2).head
       println(s"For expected centroid ${e.mkString("[", ",", "]")}, the closest predicted cluster was found " +
         s"at ${cc.mkString("[", ",", "]")}; distance=$distance.")
