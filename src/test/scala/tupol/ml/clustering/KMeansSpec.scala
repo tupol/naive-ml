@@ -27,7 +27,7 @@ class KMeansSpec extends FunSuite with Matchers {
     Array(0.0, 1.0)
   )
 
-  def dataPoints(centroids: Seq[Point]): Seq[Point] = centroids.flatMap(p => disc(200, p, 0.5))
+  def dataPoints(centroids: Seq[Point]): Seq[Point] = centroids.flatMap(p => disc(300, p, 0.5))
 
   test("KMeans#mean test 1") {
 
@@ -160,7 +160,7 @@ class KMeansSpec extends FunSuite with Matchers {
     val kCenters = Seq(Array(0.0, 0.0), Array(0.0, 2.0), Array(2.0, 2.0))
     val k = kCenters.size
     val clusters = dataPoints(kCenters)
-    val actual = KMeansTrainer(3, 200, 1E-6).train(clusters).clusterCenters.map(_.point)
+    val actual = KMeansTrainer(3, 200, 1E-8).train(clusters).clusterCenters.map(_.point)
 
     val epsilon = 0.1
 

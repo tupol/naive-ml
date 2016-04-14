@@ -1,5 +1,7 @@
 package tupol
 
+import scala.collection.parallel.ParSeq
+
 /**
  *
  */
@@ -7,47 +9,61 @@ package object ml {
 
   type Point = Array[Double]
 
-  case class DoubleLabeledPoint(label: Double, point: Point) extends LabeledPoint[Double](label, point)
-
-  abstract class LabeledPoint[L](label: L, point: Point)
-
   trait Predictor[T, P] {
     def predict(data: T): P
+
     def predict(data: Seq[T]): Seq[P] =
+      predict(data.par).toList
+
+    def predict(data: ParSeq[T]): ParSeq[P] =
       data.map(predict)
   }
 
+  abstract class LabeledPoint[L](label: L, point: Point)
+
   trait Trainer[T, P] {
-    def train(data: Seq[T]): P
+    def train(data: Seq[T]): P = train(data.par)
+    def train(data: ParSeq[T]): P
   }
 
-  implicit class PointOps(thisPoint: Point) {
+  case class DoubleLabeledPoint(label: Double, point: Point) extends LabeledPoint[Double](label, point)
 
-    def *(scalar: Double) = thisPoint.map(_ * scalar)
+  /**
+   * Decorate the Point with new operations
+   *
+   * @param point
+   */
+  implicit class PointOps(point: Point) {
+
+    def *(scalar: Double) = point.map(_ * scalar)
 
     def *(thatPoint: Point) = {
-      require(thisPoint.size == thatPoint.size)
-      thisPoint.zip(thatPoint).map { case (t, x) => t * x }.sum
+      require(point.size == thatPoint.size)
+      point.zip(thatPoint).map { case (t, x) => t * x }.sum
     }
 
     def -(thatPoint: Point) = {
-      require(thisPoint.size == thatPoint.size)
-      thisPoint.zip(thatPoint).map { case (t, x) => t - x }
+      require(point.size == thatPoint.size)
+      point.zip(thatPoint).map { case (t, x) => t - x }
     }
 
-    def /(scalar: Double) = thisPoint.map(_ / scalar)
+    def /(scalar: Double) = point.map(_ / scalar)
 
     def distance2(thatPoint: Point): Double = {
       distance2ByDimension(thatPoint).sum
     }
     def distance2ByDimension(thatPoint: Point): Point = {
-      thisPoint.zip(thatPoint).map(x => (x._2 - x._1) * (x._2 - x._1))
+      point.zip(thatPoint).map(x => (x._2 - x._1) * (x._2 - x._1))
     }
 
-    override def toString() = thisPoint.mkString("[", ", ", "]")
+    override def toString() = point.mkString("[", ", ", "]")
   }
 
-  implicit class PointsOps(points: Seq[Point]) {
+  /**
+   * Decorate the Sequences of Points with new operations
+   * @param points
+   */
+  implicit class ParPointsOps(points: ParSeq[Point]) {
 
     lazy val size = points.size
 
@@ -82,6 +98,7 @@ package object ml {
 
   /**
    * Square distance between two vectors
+   *
    * @param vector1
    * @param vector2
    * @return
@@ -90,11 +107,13 @@ package object ml {
     vector1.zip(vector2).map(x => (x._2 - x._1) * (x._2 - x._1)).sum
   }
 
-  private[ml] def mean(vectors: Seq[Point]): Point = {
+  private[ml] def mean(vectors: ParSeq[Point]): Point = {
     require(vectors.size > 0)
     vectors.reduce((v1, v2) => v1.zip(v2).map(x => x._1 + x._2))
       .map(x => x / vectors.size)
   }
+
+  private[ml] def mean(vectors: Seq[Point]): Point = mean(vectors.par)
 
   /**
    * This is a pseudo polynomial of 1 variable x
@@ -111,6 +130,7 @@ package object ml {
 
     /**
      * Create a new CxFun by mutiplying each function with a constant parameter
+     *
      * @param parameters
      * @return
      */
