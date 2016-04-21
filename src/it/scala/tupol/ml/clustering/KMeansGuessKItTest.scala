@@ -9,7 +9,7 @@ import scala.collection.parallel.ParSeq
 /**
  *
  */
-class KMeansGuessK extends FunSuite with Matchers {
+class KMeansGuessKItTest extends FunSuite with Matchers {
 
   import ClusterGen2D._
 

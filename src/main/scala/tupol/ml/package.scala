@@ -9,6 +9,12 @@ package object ml {
 
   type Point = Array[Double]
 
+  abstract class LabeledPoint[L](label: L, point: Point) {
+    override def toString = s"($label) ${point.mkString("[", ", ", "]")})"
+  }
+
+  case class DoubleLabeledPoint(label: Double, point: Point) extends LabeledPoint[Double](label, point)
+
   trait Predictor[T, P] {
     def predict(data: T): P
 
@@ -19,14 +25,10 @@ package object ml {
       data.map(predict)
   }
 
-  abstract class LabeledPoint[L](label: L, point: Point)
-
   trait Trainer[T, P] {
     def train(data: Seq[T]): P = train(data.par)
     def train(data: ParSeq[T]): P
   }
-
-  case class DoubleLabeledPoint(label: Double, point: Point) extends LabeledPoint[Double](label, point)
 
   /**
    * Decorate the Point with new operations
@@ -35,19 +37,32 @@ package object ml {
    */
   implicit class PointOps(point: Point) {
 
+    def +(scalar: Double) = point.map(_ + scalar)
+
+    def -(scalar: Double) = point.map(_ - scalar)
+
     def *(scalar: Double) = point.map(_ * scalar)
 
+    def /(scalar: Double) = point.map(_ / scalar)
+
     def *(thatPoint: Point) = {
-      require(point.size == thatPoint.size)
-      point.zip(thatPoint).map { case (t, x) => t * x }.sum
+      (point :* thatPoint).sum
     }
 
-    def -(thatPoint: Point) = {
+    def :+(thatPoint: Point) = {
+      require(point.size == thatPoint.size)
+      point.zip(thatPoint).map { case (t, x) => t + x }
+    }
+
+    def :-(thatPoint: Point) = {
       require(point.size == thatPoint.size)
       point.zip(thatPoint).map { case (t, x) => t - x }
     }
 
-    def /(scalar: Double) = point.map(_ / scalar)
+    def :*(thatPoint: Point) = {
+      require(point.size == thatPoint.size)
+      point.zip(thatPoint).map { case (x, t) => x * t }
+    }
 
     def distance2(thatPoint: Point): Double = {
       distance2ByDimension(thatPoint).sum
@@ -63,9 +78,40 @@ package object ml {
    * Decorate the Sequences of Points with new operations
    * @param points
    */
-  implicit class ParPointsOps(points: ParSeq[Point]) {
+  implicit class PointsOps(points: Seq[Point]) {
 
     lazy val size = points.size
+
+    def variance(mean: Point): Point = {
+      points.map(_.distance2ByDimension(mean)).sumByDimension / size
+    }
+
+    lazy val mean: Point = {
+      require(size > 0)
+      sumByDimension / size
+    }
+
+    lazy val sumByDimension: Point = {
+      require(size > 0)
+      points.reduce((v1, v2) => v1.zip(v2).map(x => x._1 + x._2))
+    }
+
+    lazy val variance: Point = {
+      points.map(_.distance2ByDimension(mean)).sumByDimension / (size - 1)
+    }
+
+    def normalize() = {
+      val sigma = variance.map(math.sqrt)
+      points.map(v => v.zip(mean).zip(sigma).map { case ((x, mu), sig) => (x - mu) / sig })
+    }
+  }
+  /**
+   * Decorate the Sequences of Points with new operations
+   * @param points
+   */
+  implicit class ParPointsOps(points: ParSeq[Point]) {
+
+    val size = points.size
 
     def *(scalar: Double) = points.map(_ * scalar)
 
@@ -86,7 +132,7 @@ package object ml {
     }
 
     lazy val variance: Point = {
-      points.map(_.distance2ByDimension(mean)).sumByDimension / size
+      points.map(_.distance2ByDimension(mean)).sumByDimension / (size - 1)
     }
 
     def normalize() = {

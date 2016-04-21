@@ -20,9 +20,9 @@ class LinearRegressionSpec extends FunSuite with Matchers {
     )
     val theta = Array(0.1, 0.2)
     val tolerance = 0.001
-    val expected = 11.9450
-    val actual = cost(data, theta)
-    val actualEpsilon = math.abs(actual - expected)
+    val expectedCost = 11.9450
+    val actualCost = cost(data, theta)
+    val actualEpsilon = math.abs(actualCost - expectedCost)
 
     actualEpsilon should be <= tolerance
 
@@ -38,9 +38,9 @@ class LinearRegressionSpec extends FunSuite with Matchers {
     )
     val theta = Array(0.1, 0.2, 0.3)
     val tolerance = 0.001
-    val expected = 7.0175
-    val actual = cost(data, theta)
-    val actualEpsilon = math.abs(actual - expected)
+    val expectedCost = 7.0175
+    val actualCost = cost(data, theta)
+    val actualEpsilon = math.abs(actualCost - expectedCost)
 
     actualEpsilon should be <= tolerance
 
@@ -57,10 +57,11 @@ class LinearRegressionSpec extends FunSuite with Matchers {
     val maxIter = 1000
     val learningRate = 0.01
 
-    val expectedTheta = Array(5.211465984067477, -0.5725906341810969)
-    val expectedCost = 0.8554025700312651
+    val expectedTheta = Array(5.214754949594046, -0.573345912562104)
+    val expectedCost = 0.8542642597709095
 
-    val rtheta = LinearRegressionTrainer(theta, maxIter, learningRate, LinearRegression.hypothesys).train(data)
+    val rtheta = LinearRegressionTrainer(theta, maxIter, learningRate, hypothesys).train(data)
+
     rtheta.theta should be(expectedTheta)
 
     cost(data, rtheta.theta) should be(expectedCost)
@@ -76,10 +77,10 @@ class LinearRegressionSpec extends FunSuite with Matchers {
     val maxIter = 10
     val learningRate = 0.1
 
-    val expectedTheta = Array(1.596465801944336, 0.21987429259863284)
-    val expectedCost = 4.646865103463483
+    val expectedTheta = Array(1.7098632193403809, 0.19229353765009757)
+    val expectedCost = 4.5116663759254
 
-    val rtheta = LinearRegressionTrainer(theta, maxIter, learningRate, LinearRegression.hypothesys).train(data)
+    val rtheta = LinearRegressionTrainer(theta, maxIter, learningRate, hypothesys).train(data)
 
     rtheta.theta should be(expectedTheta)
 
@@ -93,21 +94,18 @@ class LinearRegressionSpec extends FunSuite with Matchers {
     )
     val theta = Array(0.5, 0.5)
     val maxIter = 10
-    val learningRate = 1
+    val learningRate = 0.1
     val tolerance = 0.1
 
     val expectedTheta = Array(1.7098632193403809, 0.19229353765009757)
     val expectedCost = 4.5116663759254
 
-    val rtheta = LinearRegressionOptimizedTrainer(theta, maxIter, learningRate, tolerance, LinearRegression.hypothesys).train(data)
+    val rtheta = LinearRegressionOptimizedTrainer(theta, maxIter, learningRate, tolerance, hypothesys).train(data)
 
-    //    rtheta.theta should be (expectedTheta)
-    //
-    //    cost(data, rtheta.theta) should be (expectedCost)
+    rtheta.theta should be(expectedTheta)
 
-    println(rtheta.thetaHistory.size)
-    rtheta.thetaHistory.map(_.mkString(", ")).foreach(println)
-    rtheta.thetaHistory.map(LinearRegression.cost(data, _)).foreach(println)
+    cost(data, rtheta.theta) should be(expectedCost)
+
   }
 
 }

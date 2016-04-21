@@ -32,52 +32,49 @@ object LinearRegression {
       theta * point
   }
 
-  def sse(data: Seq[DoubleLabeledPoint], theta: Point) =
+  def sse(data: Seq[DoubleLabeledPoint], theta: Point): Double =
+    sse(data.par, theta)
+
+  def sse(data: ParSeq[DoubleLabeledPoint], theta: Point): Double =
     errors(data, theta).map(e => e * e).sum
 
-  def sse(data: ParSeq[DoubleLabeledPoint], theta: Point) =
-    errors(data, theta).map(e => e * e).sum
-
-  def cost(data: Seq[DoubleLabeledPoint], theta: Point) = {
-    sse(data, theta) / data.size / 2
+  def cost(data: Seq[DoubleLabeledPoint], theta: Point): Double = {
+    cost(data.par, theta)
   }
-  def cost(data: ParSeq[DoubleLabeledPoint], theta: Point) = {
+  def cost(data: ParSeq[DoubleLabeledPoint], theta: Point): Double = {
     sse(data, theta) / data.size / 2
   }
 
-  def errors(data: Seq[DoubleLabeledPoint], theta: Point) = {
+  def errors(data: ParSeq[DoubleLabeledPoint], theta: Point): ParSeq[Double] = {
     val X = data.map(_.point)
     val Y = data.map(_.label)
     val predictions = new LinearRegression(theta).predict(X)
     predictions.map(_.label).zip(Y).map { case (p, y) => (p - y) }
   }
 
-  def errors(data: ParSeq[DoubleLabeledPoint], theta: Point) = {
-    val X = data.map(_.point)
-    val Y = data.map(_.label)
-    val predictions = new LinearRegression(theta).predict(X)
-    predictions.map(_.label).zip(Y).map { case (p, y) => (p - y) }
-  }
+  def gradient(data: ParSeq[DoubleLabeledPoint], theta: Point): Point =
+    data.map { dlp => (dlp.point * (hypothesys(dlp.point, theta) - dlp.label)) }.
+      sumByDimension / data.size
 
 }
 
 case class LinearRegressionTrainer(theta: Point, maxIter: Int = 10, learningRate: Double = 0.01, hypothesys: (Point, Point) => Double)
     extends Trainer[DoubleLabeledPoint, LinearRegression] {
 
+  import LinearRegression._
+
   def train(data: ParSeq[DoubleLabeledPoint]) = {
 
     def train(thetas: ParSeq[Point], step: Int, done: Boolean): ParSeq[Point] = {
-      if (step == maxIter - 1 || done)
+      if (step == maxIter || done)
         thetas
       else {
         val oldTheta = thetas.head
-        val differential = data.map { dlp => (dlp.point * (hypothesys(dlp.point, oldTheta) - dlp.label)) }.sumByDimension / data.size
-        val newTheta = oldTheta - differential * learningRate
-
-        val oldCost = LinearRegression.cost(data, oldTheta)
-        val newCost = LinearRegression.cost(data, newTheta)
+        val grad = gradient(data, oldTheta)
+        val newTheta = oldTheta :- grad * learningRate
+        val oldCost = cost(data, oldTheta)
+        val newCost = cost(data, newTheta)
         val done = newCost >= oldCost
-
         train(newTheta +: thetas, step + 1, done)
       }
     }
@@ -87,22 +84,23 @@ case class LinearRegressionTrainer(theta: Point, maxIter: Int = 10, learningRate
   }
 }
 
+/** This is a naive optimization, nothing fancy. Maybe in the future some BFGS... */
 case class LinearRegressionOptimizedTrainer(theta: Point, maxIter: Int = 10, learningRate: Double = 0.01, tolerance: Double = 10E-4, hypothesys: (Point, Point) => Double)
     extends Trainer[DoubleLabeledPoint, LinearRegression] {
+
+  import LinearRegression._
 
   def train(data: ParSeq[DoubleLabeledPoint]) = {
 
     def train(thetas: ParSeq[Point], step: Int, learningRate: Double, done: Boolean): ParSeq[Point] = {
-      if (step == maxIter - 1 || done)
+      if (step == maxIter || done)
         thetas
       else {
         val oldTheta = thetas.head
-        val differential = data.map { dlp => (dlp.point * (hypothesys(dlp.point, oldTheta) - dlp.label)) }.sumByDimension / data.size
-        val newTheta = oldTheta - differential * learningRate
-
-        val oldCost = LinearRegression.cost(data, oldTheta)
-        val newCost = LinearRegression.cost(data, newTheta)
-
+        val grad = gradient(data, oldTheta)
+        val newTheta = oldTheta :- grad * learningRate
+        val oldCost = cost(data, oldTheta)
+        val newCost = cost(data, newTheta)
         if (newCost - oldCost > 0) {
           // the cost is increasing, so let's reduce the learning rate, but change nothing else
           train(thetas, step, learningRate / 3, false)
