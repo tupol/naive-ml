@@ -3,6 +3,7 @@ package tupol.ml.clustering
 import tupol.ml._
 
 import scala.collection.parallel.ParSeq
+import scala.math._
 import scala.util.Random
 
 case class KMeansLabeledPoint(label: (Int, Double), point: Point) extends LabeledPoint[(Int, Double)](label, point)
@@ -28,6 +29,54 @@ case class KMeans(clusterCenters: Seq[ClusterPoint]) extends Predictor[Point, KM
 
 object KMeans {
 
+  def main(args: Array[String]) = {
+
+    val kmeasure = Array(
+//      (2	,582.2416357478),
+//      (5	 , 185.4437605004),
+//      (8	 , 103.140507434),
+//      (16	,41.5307314342),
+//      (25	,21.8114009537),
+//      (36	,12.2163124606),
+//      (49	,7.6140197723),
+//      (64	,2.9476137549),
+//      (81	,2.2645240378),
+//      (100	,0.9918006621),
+//      (125	,0.2728564177),
+//      (216	,0.0483969821),
+//      (343	,0.0311292278)
+
+        (2, 1.918628584474461),
+      (10, 0.1918628584474461),
+      (20, 0.03690000594866543),
+      (30, 0.030480303883404558),
+      (40, 0.02055326352243121),
+      (50, 0.015053729795239078),
+      (60, 0.01385961433299094),
+      (70, 0.00922247340114342),
+      (80, 0.008408645370093995),
+      (90, 0.00703045112075809),
+      (100, 0.006798031512871512)
+
+//      (2.0, 1.0061763333816824),
+//      (10.0, 0.2549886721024244),
+//      (20.0, 0.12273979534565847),
+//      (30.0, 0.07543657556372774),
+//      (40.0, 0.05606289347127518),
+//      (50.0, 0.0390735695704057),
+//      (60.0, 0.04016818455148996),
+//      (70.0, 0.02649656735771119),
+//      (80.0, 0.024835685376829397),
+//      (90.0, 0.022481931806457776),
+//      (100.0, 0.021041603405182237)
+    ).map{case (k,x) => (k.toDouble, 1*x)}
+
+//    println(chooseK(kmeasure, slope = 0.1))
+//    println(chooseK(kmeasure, slope = -0.0333))
+    println(chooseK(kmeasure, slope = 0.01))
+
+  }
+
   /**
    * Helper function for choosing the K.
    *
@@ -36,20 +85,23 @@ object KMeans {
    *
    * @param k_measure A sequence of tuples of k and sse representing evolution of a measurement (e.g. WSSSE) over k.
    *              It is recommended to use evenly spread ks (like 10, 20, 30, 40....)
-   * @param epsilon The acceptable decrease ratio of the measurements between two consecutive ks.
-   *                  For example, how mny times smaller is wssse(k+1) compared of wssse(k).
+   * @param slope The acceptable decrease ratio of the measurements between two consecutive ks.
+   *                  For example, how mny times smaller is wssse(k+1) compared of wssse(k-1).
    * @param maxK Having a K equal or greater than the data set itself does not make a lot of sense, so as an extra measure, we specify it.
    */
-  def chooseK(k_measure: Seq[(Int, Double)], epsilon: Double = 0.005, maxK: Int = 500): Int = {
+  def chooseK(k_measure: Seq[(Double, Double)], slope: Double = 0.02, maxK: Int = 500): Int = {
 
+    import math._
     val aproxFunction = CxFun(Map(
-      ("1", (x: Double) => 1),
-      ("1 / x", (x: Double) => 1 / (x)),
-      ("1 / x^2", (x: Double) => 1 / (x * x))
+//      ("1", (x: Double) => 1),
+      ("1 / ln(x)", (x: Double) => 1 / log(x))
+//      ("1 / x^2", (x: Double) => 1 / (x * x)),
+//      ("1 / x^3", (x: Double) => 1 / (x * x * x))
     ))
 
-    chooseK(k_measure, aproxFunction, epsilon, maxK)
+    chooseK(k_measure, aproxFunction, slope, maxK)
   }
+
 
   /**
    * Helper function for choosing the K.
@@ -61,11 +113,11 @@ object KMeans {
    *              It is recommended to use evenly spread ks (like 10, 20, 30, 40....)
    * @param aproxFun A custom function of Double to Double that should be used to approximate the K curve;
    *                 the actual parameters will be found using the normal equation
-   * @param epsilon The acceptable decrease ratio of the measurements between two consecutive ks.
+   * @param slope The acceptable decrease ratio of the measurements between two consecutive ks.
    *                  For example, how mny times smaller is wssse(k+1) compared of wssse(k).
    * @param maxK Having a K equal or greater than the data set itself does not make a lot of sense, so as an extra measure, we specify it.
    */
-  def chooseK(k_measure: Seq[(Int, Double)], aproxFun: CxFun, epsilon: Double, maxK: Int): Int = {
+  def chooseK(k_measure: Seq[(Double, Double)], aproxFun: CxFun, slope: Double, maxK: Int): Int = {
 
     require(maxK >= k_measure.map(_._1).max, "The specified maxK should be larger than the maximum k from the input measurements.")
 
@@ -84,14 +136,16 @@ object KMeans {
 
     println(s"The values used for approximating the measurement function are:")
     println(s"  K, Value")
-    k_measure.foreach { case (k, v) => println(f"$k%3d, $v") }
+    k_measure.foreach { case (k, v) => println(f"$k%3.0f, $v") }
     println(
       s"""The approximation function is:
          |  f(x) = ${kFunction}""".stripMargin
     )
 
+    val secondDerivative = (x: Double) => -T(0) / x / x
+
     // Start with k == 2
-    findK(2, epsilon, maxK, kFunction).toInt
+    findK(2, slope, maxK, secondDerivative).toInt
   }
 
   /**
@@ -102,11 +156,11 @@ object KMeans {
    * @param data Training data
    * @param runs How many times should a model be generated for the same input parameters; I recommend a minimum of 3
    * @param kMeansTrainerFactory A function that returns a KMeansTrainer, given a K as an input
-   * @param epsilon The acceptable decrease ratio (derivative) of the measurements for every k.
+   * @param slope The acceptable decrease ratio (derivative) of the measurements for every k.
    * @param maxK Having a K equal or greater than the data set itself does not make a lot of sense, so as an extra measure, we specify it.
    * @return The best guess for K
    */
-  def guessK(data: ParSeq[Point], runs: Int = 3, kMeansTrainerFactory: (Int) => KMeansTrainer, epsilon: Double = 0.0003, maxK: Int = 500): Int = {
+  def guessK(data: ParSeq[Point], runs: Int = 3, kMeansTrainerFactory: (Int) => KMeansTrainer, slope: Double = 0.01, maxK: Int = 500): Int = {
 
     val ks = (
       (2 to 10 by 3) ++
@@ -117,13 +171,13 @@ object KMeans {
     val sses = ks.map { k =>
       def kMeansTrainer = kMeansTrainerFactory(k)
       val (model, sse) = bestModel(data, runs, kMeansTrainer)
-      (k, sse)
+      (k.toDouble, sse)
     }
 
-    KMeans.chooseK(sses, epsilon)
+    KMeans.chooseK(sses, slope)
   }
-  def guessK(data: Seq[Point], runs: Int, kMeansTrainerFactory: (Int) => KMeansTrainer, epsilon: Double, maxK: Int): Int = {
-    guessK(data.par, runs, kMeansTrainerFactory, epsilon, maxK)
+  def guessK(data: Seq[Point], runs: Int, kMeansTrainerFactory: (Int) => KMeansTrainer, slope: Double, maxK: Int): Int = {
+    guessK(data.par, runs, kMeansTrainerFactory, slope, maxK)
   }
 
   /**
@@ -138,20 +192,25 @@ object KMeans {
     (0 until runs).map(_ => {
       val kmeans = kMeansTrainer.train(trainingData)
       val sse = kmeans.predict(trainingData).map(_.label._2).sum
-      (kmeans, sse)
+      (kmeans, sse/trainingData.size)
     }).minBy(_._2)
   }
   def bestModel(trainingData: Seq[Point], runs: Int, kMeansTrainer: => KMeansTrainer): (KMeans, Double) = {
     bestModel(trainingData.par, runs, kMeansTrainer)
   }
 
-  private def findK(k: Int, epsilon: Double, maxK: Int, kFunction: (Double) => Double): Double = {
+  private def findK(k: Int, slope: Double, maxK: Int, kFunction: (Double) => Double, step: Double = 1E-9): Double = {
+    import math._
     val f0 = kFunction(k)
-    val f1 = kFunction(k + 1E-6)
-    val derivative = math.abs(f1 - f0)
-    // if the derivative is acceptable and the trend is still decresing of the maxK was reached we stop
-    if ((derivative <= epsilon && f1 <= f0) || k > maxK) k
-    else findK(k + 1, epsilon, maxK, kFunction)
+    val f1 = kFunction(k-step)
+    val f2 = kFunction(k+step)
+    val variation = (f1 - f0) / (1 * step)
+//    println(f"$k%3d,${kFunction(k)}%1.4E,$variation%1.4E")
+    // if the derivative is acceptable and the trend is still decreasing of the maxK was reached we stop
+//    if ((variation <= slope && f2 <= f1) || k > maxK) k
+        println(f"$k%3d, ${kFunction(k)}%1.4E, $variation%1.4E")
+    if ((abs(kFunction(k)) <= abs(slope)) || k > maxK) k
+    else findK(k + 1, slope, maxK, kFunction)
   }
 
 }
