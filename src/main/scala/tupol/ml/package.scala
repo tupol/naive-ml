@@ -190,7 +190,7 @@ package object ml {
 
     override def apply(x: Double): Double = assembledFunction(x)
 
-    override def toString: String = functions.map(_._1).mkString(" + ")
+    override def toString: String = functions.map(_._1).mkString(" + ").replaceAll("\\* 1 ", "").replaceAll(" \\+ -", " - ")
 
   }
 
