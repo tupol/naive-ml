@@ -194,10 +194,11 @@ class KMeansSpec extends FunSuite with Matchers {
       (180, 3.914782E+04),
       (190, 3.830164E+04),
       (200, 3.681869E+04)
-    )
+    ).map{ case (k, v) => (k.toDouble, v)}
 
+    def id(x: Double) = x
     val expectedK = 135
-    val guessedK = KMeans.chooseK(sses, 0.0003)
+    val guessedK = KMeans.chooseK(sses, id, 0.0003, 300)
     println(s"guessedK = $guessedK")
     math.abs(guessedK - expectedK) should be <= 10
   }

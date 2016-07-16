@@ -91,6 +91,16 @@ package object ml {
       sumByDimension / size
     }
 
+    lazy val minByDimension: Point = {
+      require(size > 0)
+      points.reduce((p1, p2) => p1.zip(p2).map(x => math.min(x._1, x._2)))
+    }
+
+    lazy val maxByDimension: Point = {
+      require(size > 0)
+      points.reduce((p1, p2) => p1.zip(p2).map(x => math.max(x._1, x._2)))
+    }
+
     lazy val sumByDimension: Point = {
       require(size > 0)
       points.reduce((v1, v2) => v1.zip(v2).map(x => x._1 + x._2))
@@ -124,6 +134,16 @@ package object ml {
     lazy val mean: Point = {
       require(size > 0)
       sumByDimension / size
+    }
+
+    lazy val minByDimension: Point = {
+      require(size > 0)
+      points.reduce((p1, p2) => p1.zip(p2).map(x => math.min(x._1, x._2)))
+    }
+
+    lazy val maxByDimension: Point = {
+      require(size > 0)
+      points.reduce((p1, p2) => p1.zip(p2).map(x => math.max(x._1, x._2)))
     }
 
     lazy val sumByDimension: Point = {
