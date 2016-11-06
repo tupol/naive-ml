@@ -4,7 +4,6 @@ import tupol.ml._
 
 import scala.annotation.tailrec
 import scala.collection.parallel.ParSeq
-import scala.math._
 import scala.util.Random
 
 case class KMeansLabeledPoint(label: (Int, Double), point: Point) extends LabeledPoint[(Int, Double)](label, point)
@@ -30,53 +29,6 @@ case class KMeans(clusterCenters: Seq[ClusterPoint]) extends Predictor[Point, KM
 
 object KMeans {
 
-  def main(args: Array[String]) = {
-
-    val kmeasure = Array(
-//      (2	,582.2416357478),
-//      (5	 , 185.4437605004),
-//      (8	 , 103.140507434),
-//      (16	,41.5307314342),
-//      (25	,21.8114009537),
-//      (36	,12.2163124606),
-//      (49	,7.6140197723),
-//      (64	,2.9476137549),
-//      (81	,2.2645240378),
-//      (100	,0.9918006621),
-//      (125	,0.2728564177),
-//      (216	,0.0483969821),
-//      (343	,0.0311292278)
-
-        (2, 1.918628584474461),
-      (10, 0.1918628584474461),
-      (20, 0.03690000594866543),
-      (30, 0.030480303883404558),
-      (40, 0.02055326352243121),
-      (50, 0.015053729795239078),
-      (60, 0.01385961433299094),
-      (70, 0.00922247340114342),
-      (80, 0.008408645370093995),
-      (90, 0.00703045112075809),
-      (100, 0.006798031512871512)
-
-//      (2.0, 1.0061763333816824),
-//      (10.0, 0.2549886721024244),
-//      (20.0, 0.12273979534565847),
-//      (30.0, 0.07543657556372774),
-//      (40.0, 0.05606289347127518),
-//      (50.0, 0.0390735695704057),
-//      (60.0, 0.04016818455148996),
-//      (70.0, 0.02649656735771119),
-//      (80.0, 0.024835685376829397),
-//      (90.0, 0.022481931806457776),
-//      (100.0, 0.021041603405182237)
-    ).map{case (k,x) => (k.toDouble, 128000*x)}
-
-//    println(chooseK(kmeasure, threshold = 0.1))
-//    println(chooseK(kmeasure, threshold = -0.0333))
-//    println(chooseK(kmeasure, threshold = 0.01))
-
-  }
 
   /**
    * Helper function for choosing the K.
@@ -90,7 +42,7 @@ object KMeans {
    *                  For example, how mny times smaller is wssse(k+1) compared of wssse(k-1).
    * @param maxK Having a K equal or greater than the data set itself does not make a lot of sense, so as an extra measure, we specify it.
    */
-  def chooseK(k_measure: Seq[(Double, Double)], stdSSE: (Double) => Double, threshold: Double = 0.02, maxK: Int = 140): Int = {
+  def chooseK(k_measure: Seq[(Double, Double)], stdSSE: (Double) => Double, threshold: Double = 0.02, maxK: Int = 140)(reportFile: String): Int = {
 
     import math._
     val aproxFunction = CxFun(Map(
@@ -100,7 +52,7 @@ object KMeans {
       ("1 / x^3", (x: Double) => 1 / (x * x * x))
     ))
 
-    chooseK(k_measure, aproxFunction, stdSSE, threshold, maxK)
+    chooseK(k_measure, aproxFunction, stdSSE, threshold, maxK)(reportFile)
   }
 
 
@@ -118,7 +70,7 @@ object KMeans {
    *                  For example, how mny times smaller is wssse(k+1) compared of wssse(k).
    * @param maxK Having a K equal or greater than the data set itself does not make a lot of sense, so as an extra measure, we specify it.
    */
-  def chooseK(k_measure: Seq[(Double, Double)], aproxFun: CxFun, stdSSE: (Double) => Double, threshold: Double, maxK: Int): Int = {
+  def chooseK(k_measure: Seq[(Double, Double)], aproxFun: CxFun, stdSSE: (Double) => Double, threshold: Double, maxK: Int)(reportFile: String): Int = {
 
     require(maxK >= k_measure.map(_._1).max, "The specified maxK should be larger than the maximum k from the input measurements.")
 
@@ -135,19 +87,21 @@ object KMeans {
 
     val kFunction = aproxFun.withParameters(T)
 
-    println(s"The values used for approximating the measurement function are:")
-    println(s"K   , Avg WSSE, Approx, WSSE * K^2, StdSSE")
-    k_measure.foreach { case (k, v) => println(f"$k%4.0f, $v, ${kFunction(k)}, ${kFunction(k)*k*k}, ${stdSSE(k)}") }
-    println(
-      s"""
+    val lines = Seq("", s"The values used for approximating the measurement function are:", "",
+      s"K   , Avg WSSE, Approx, WSSE * K^2, StdSSE") ++
+      k_measure.map { case (k, v) => f"$k%4.0f, $v, ${kFunction(k)}, ${kFunction(k)*k*k}, ${stdSSE(k)}" } ++
+      Seq("", s"""
          |The approximation function is:
          |  f(x) = ${kFunction}
-         |  """.stripMargin
-    )
+         |  """.stripMargin,
+        "",
+          s"K   , Avg WSSE, Slope, Avg WSSE * K^2, Slope, Ideal Avg WSSE")
 
-    println(s"K   , Avg WSSE, Avg WSSE * K^2, Slope, StdSSE")
+    println(lines.mkString("\n"))
+
+    saveLinesToFile(lines, reportFile)
     // Start with k == 2
-    findK(2.0, threshold, maxK, kFunction, stdSSE).round.toInt
+    findK(2.0, threshold, maxK, kFunction, stdSSE)(reportFile: String).round.toInt
   }
 
   /**
@@ -162,36 +116,28 @@ object KMeans {
    * @param maxK Having a K equal or greater than the data set itself does not make a lot of sense, so as an extra measure, we specify it.
    * @return The best guess for K
    */
-  def guessK(data: ParSeq[Point], runs: Int = 3, kMeansTrainerFactory: (Int) => KMeansTrainer, threshold: Double = 0.01, maxK: Int = 500): Int = {
+  def guessK(data: ParSeq[Point], runs: Int = 3, kMeansTrainerFactory: (Int) => KMeansTrainer, threshold: Double = 0.01, maxK: Int = 500)(reportFile: String): Int = {
 
     val ks = (
-//      (2 to 10 by 3) ++
-//      (4 to 10).map(x => x * x) ++
-//      (5 to 20).map(x => x * x * x)
-//      2 +: ((1 to 10) ++ (15 to 30 by 5)).map(_ * 10)
       (2 until 10 by 2) ++ (10 to 140 by 10)
     ).filter(x => x <= data.size / 2 && x <= maxK)
 
-    println(f"K, avg, MIN, AVG, MAX")
-    val dataPoints = ks.map { k =>
+    val dataPointsWithLogs = ks.map { k =>
       def kMeansTrainer = kMeansTrainerFactory(k)
       val (model, sse) = bestModel(data, runs, kMeansTrainer)
-
-      val kdists = for {
-        from <- model.clusterCenters
-        to <- model.clusterCenters
-      } yield(from.point.distance2(to.point))
-      val kdist = kdists.sum / 2 / k
-
       val minKdist = model.clusterCenters.map(from => model.clusterCenters.filterNot(_.k == from.k).map(to => from.point.distance2(to.point)).min).sum / 2
       val avgKdist = model.clusterCenters.map(from => model.clusterCenters.filterNot(_.k == from.k).map(to => from.point.distance2(to.point)).sum/model.clusterCenters.size).sum / 2
       val maxKdist = model.clusterCenters.map(from => model.clusterCenters.filterNot(_.k == from.k).map(to => from.point.distance2(to.point)).max).sum / 2
 
-      println(f"$k%5f, $kdist%1.4E, $minKdist%1.4E, ${avgKdist}%1.4E, ${maxKdist}%1.4E")
+      val line = (f"$k%5f, $minKdist%1.4E, ${avgKdist}%1.4E, ${maxKdist}%1.4E, ${minKdist/k}%1.4E")
 
-      (k.toDouble, sse / data.size )
+      (k.toDouble, sse / data.size, line)
     }
 
+    val lines = Seq("", f"K, SUM MIN^2, SUM AVG^2, SUM MAX^2, AVG MIN^2") ++ dataPointsWithLogs.map(_._3)
+    saveLinesToFile(lines, reportFile)
+
+    val dataPoints = dataPointsWithLogs.map(x => (x._1, x._2))
 
     def stdSSE(k: Double, dataSize : Long, dataRange: Point): Double = {
       (  dataRange * (dataPoints.size + 2 * k)  / 2 / k ).map(x => x * x).sum
@@ -201,24 +147,19 @@ object KMeans {
 
     def stdsse(k: Double) = stdSSE(k, data.size, range) / data.size
 
-
-
-//    val sses = dataPoints.map(_._2)
-//    val dataPointsScaled = ks.map(_.toDouble).zip(scale(sses, 0.0, 1000.0))
-
-    KMeans.chooseK(dataPoints, stdsse, threshold)
+    KMeans.chooseK(dataPoints, stdsse, threshold)(reportFile)
   }
 
-  def guessK(data: Seq[Point], runs: Int, kMeansTrainerFactory: (Int) => KMeansTrainer, threshold: Double, maxK: Int): Int = {
-    guessK(data.par, runs, kMeansTrainerFactory, threshold, maxK)
+  def guessK(data: Seq[Point], runs: Int, kMeansTrainerFactory: (Int) => KMeansTrainer, threshold: Double, maxK: Int)(reportFile: String): Int = {
+    guessK(data.par, runs, kMeansTrainerFactory, threshold, maxK)(reportFile)
   }
 
-//  def scale(data: Seq[Double], a: Double = 0.0, b: Double = 1.0) = {
-//    val dMin = data.min
-//    val dMax = data.max
-//    def scale(x: Double) = (b - a) * (x - dMin) / (dMax - dMin) + a
-//    data.map(scale(_))
-//  }
+  def scale(data: Seq[Double], a: Double = 0.0, b: Double = 1.0) = {
+    val dMin = data.min
+    val dMax = data.max
+    def scale(x: Double) = (b - a) * (x - dMin) / (dMax - dMin) + a
+    data.map(scale(_))
+  }
 
   /**
    * Choose the best model, by running the prediction `runs` times and picking the model with the minimum SSE.
@@ -236,12 +177,8 @@ object KMeans {
 
       val trainingData = data.take((size * 0.7).toInt)
       val testData = data.drop((size * 0.7).toInt)
-
-//      println(s"trainingData = ${trainingData.take(10).map(point2Str(_))}")
-//      println(s"testData     = ${testData.take(10).map(point2Str(_))}")
-
-      val kmeans = kMeansTrainer.train(trainingData)
-      val sse = kmeans.predict(testData).map(_.label._2).sum
+      val kmeans = kMeansTrainer.train(data)
+      val sse = kmeans.predict(data).map(_.label._2).sum
       (kmeans, sse )
     }).minBy(_._2)
   }
@@ -253,23 +190,25 @@ object KMeans {
   }
 
   @tailrec
-  private def findK(k: Double, threshold: Double, maxK: Int, kFunction: (Double) => Double, stdSSE: (Double) => Double, epsilon: Double = 0.1, step: Double= 1.0): Double = {
+  private def findK(k: Double, threshold: Double, maxK: Int, kFunction: (Double) => Double, stdSSE: (Double) => Double, epsilon: Double = 0.1, step: Double= 1.0)(reportFile: String): Double = {
     import math._
 
     def ksqFun(k: Double) = kFunction(k) * k * k
 
+    val f11 = kFunction(k)
+    val f12 = kFunction(k + epsilon)
+    val variation1 = (f12 - f11) / (epsilon)
 
 
-    val f1 = ksqFun(k)
-    val f2 = ksqFun(k + epsilon)
-    val variation = (f2 - f1) / (epsilon)
+    val f21 = ksqFun(k)
+    val f22 = ksqFun(k + epsilon)
+    val variation2 = (f22 - f21) / (epsilon)
 
-    //    println(f"$k%3d,${kFunction(k)}%1.4E,$variation%1.4E")
-    // if the derivative is acceptable and the trend is still decreasing of the maxK was reached we stop
-    //    if ((variation <= threshold && f2 <= f1) || k > maxK) k
-    println(f"$k%5.2f, ${kFunction(k)}%1.4E, ${kFunction(k) * k * k}%1.4E, $variation%1.4E, ${stdSSE(k)}%1.4E")
-    if ((variation <= 0 ) || k > maxK) k
-    else findK(k + step, threshold, maxK, kFunction, stdSSE)
+    val line = f"$k%5.2f, ${kFunction(k)}%1.4E, $variation1%1.4E, ${kFunction(k) * k * k}%1.4E, $variation2%1.4E, ${stdSSE(k)}%1.4E"
+    saveLinesToFile(Seq(line), reportFile)
+//    if ((variation <= 0 ) || k > maxK) k
+    if (k > 200) k
+    else findK(k + step, threshold, maxK, kFunction, stdSSE)(reportFile)
   }
 
 }
@@ -328,14 +267,15 @@ case class KMeansTrainer(k: Int, maxIter: Int = 100, tolerance: Double = 1E-6, s
       if (step == maxIter - 1 || done)
         oldCentroids
       else {
-        val newCentroids = newControids(dataPoints, oldCentroids)
+        val newCentroids = newCentroids(dataPoints, oldCentroids)
         val done = centroidsMovements(oldCentroids, newCentroids).sum <= tolerance
         train(newCentroids, step + 1, done)
       }
     }
 
-    def newControids(points: ParSeq[Point], clusters: Seq[ClusterPoint]): Seq[ClusterPoint] = {
-      val pointsByK = KMeans(clusters).predict(points)
+    def newCentroids(points: ParSeq[Point], clusters: Seq[ClusterPoint]): Seq[ClusterPoint] = {
+      // Assign points to closest clusters (predict)
+      val pointsByK: ParSeq[KMeansLabeledPoint] = KMeans(clusters).predict(points)
       val newClusters = pointsByK.groupBy(_.label._1).map { case (k, kfx) => ClusterPoint(k, mean(kfx.map(_.point))) }.toSeq
       newClusters.toList
     }
