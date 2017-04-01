@@ -1,6 +1,7 @@
 package tupol.ml.regression
 
 import tupol.ml._
+import tupol.ml.pointops._
 
 import scala.collection.parallel.ParSeq
 import scala.math._
@@ -32,9 +33,9 @@ object LogisticRegression {
 
   def hypothesys(point: Point, theta: Point): Double = {
     if (theta.size == point.size + 1)
-      theta.head + sigmoid(theta * point)
+      theta.head + sigmoid(theta |*| point)
     else
-      sigmoid(theta * point)
+      sigmoid(theta |*| point)
   }
 
   def cost(data: ParSeq[DoubleLabeledPoint], theta: Point, lambda: Double): Double = {
@@ -46,7 +47,7 @@ object LogisticRegression {
       Y.zip(hyp).map { case (a, b) => a * log(b) }.sum +
       Y.map(1 - _).zip(hyp.map(1 - _)).map { case (a, b) => a * log(b) }.sum
     ) / m
-    val regularization = lambda * theta.tail.map(x => x * x).sum / 2 / m
+    val regularization = lambda * theta.toSeq.tail.map(x => x * x).sum / 2 / m
 
     cost + regularization
 
@@ -81,7 +82,7 @@ case class LogisticRegressionTrainer(theta: Point, maxIter: Int = 10, learningRa
         val oldTheta = thetas.head
         val grad = gradient(data, oldTheta, lambda)
 
-        val newTheta = oldTheta :- grad * learningRate
+        val newTheta = oldTheta - grad * learningRate
         val oldCost = cost(data, oldTheta, lambda)
         val newCost = cost(data, newTheta, lambda)
 

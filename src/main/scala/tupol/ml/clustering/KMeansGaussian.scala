@@ -1,6 +1,7 @@
 package tupol.ml.clustering
 
 import tupol.ml._
+import tupol.ml.pointops._
 
 import scala.collection.parallel.ParSeq
 

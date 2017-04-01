@@ -1,6 +1,7 @@
 package tupol.ml.regression
 
 import tupol.ml._
+import tupol.ml.pointops._
 
 import scala.collection.parallel.ParSeq
 
@@ -27,9 +28,9 @@ object LinearRegression {
 
   def hypothesys(point: Point, theta: Point): Double = {
     if (theta.size == point.size + 1)
-      theta.head + theta.tail * point
+      theta.head + theta.tail |*| point
     else
-      theta * point
+      theta |*| point
   }
 
   def sse(data: Seq[DoubleLabeledPoint], theta: Point): Double =
@@ -71,7 +72,7 @@ case class LinearRegressionTrainer(theta: Point, maxIter: Int = 10, learningRate
       else {
         val oldTheta = thetas.head
         val grad = gradient(data, oldTheta)
-        val newTheta = oldTheta :- grad * learningRate
+        val newTheta = oldTheta - grad * learningRate
         val oldCost = cost(data, oldTheta)
         val newCost = cost(data, newTheta)
         val done = newCost >= oldCost
@@ -98,7 +99,7 @@ case class LinearRegressionOptimizedTrainer(theta: Point, maxIter: Int = 10, lea
       else {
         val oldTheta = thetas.head
         val grad = gradient(data, oldTheta)
-        val newTheta = oldTheta :- grad * learningRate
+        val newTheta = oldTheta - grad * learningRate
         val oldCost = cost(data, oldTheta)
         val newCost = cost(data, newTheta)
         if (newCost - oldCost > 0) {

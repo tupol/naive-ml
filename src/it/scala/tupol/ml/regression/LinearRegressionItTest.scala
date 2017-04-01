@@ -2,6 +2,7 @@ package tupol.ml.regression
 
 import org.scalatest.{FunSuite, Matchers}
 import tupol.ml._
+import tupol.ml.pointops._
 
 /**
   *
@@ -11,7 +12,7 @@ class LinearRegressionItTest extends FunSuite with Matchers {
 
   test("Data Set 1") {
     val input = scala.io.Source.fromInputStream(this.getClass.getResourceAsStream("/linreg_data1.csv")).
-      getLines.map(_.split(",").map(_.toDouble)).toSeq
+      getLines.map(_.split(",").map(_.toDouble)).toSeq.toParArray
 
     val X = input.map(arr => arr.take(2)).normalize().map(arr => 1.0 +: arr)
     val Y = input.map(arr => arr.takeRight(1).head)
