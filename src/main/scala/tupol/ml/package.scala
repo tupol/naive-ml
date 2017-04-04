@@ -1,7 +1,5 @@
 package tupol
 
-import scala.collection.parallel.ParSeq
-
 /**
  *
  */
@@ -16,18 +14,15 @@ package object ml {
   case class DoubleLabeledPoint(label: Double, point: Point) extends LabeledPoint[Double](label, point)
 
   trait Predictor[T, P] {
+
     def predict(data: T): P
 
     def predict(data: Seq[T]): Seq[P] =
-      predict(data.par).toList
-
-    def predict(data: ParSeq[T]): ParSeq[P] =
       data.map(predict)
   }
 
   trait Trainer[T, P] {
-    def train(data: Seq[T]): P = train(data.par)
-    def train(data: ParSeq[T]): P
+    def train(data: Seq[T]): P
   }
 
   /**

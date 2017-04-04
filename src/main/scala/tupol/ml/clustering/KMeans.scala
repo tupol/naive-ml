@@ -111,7 +111,7 @@ object KMeans {
    * @param maxK Having a K equal or greater than the data set itself does not make a lot of sense, so as an extra measure, we specify it.
    * @return The best guess for K
    */
-  def guessK(data: ParSeq[Point], runs: Int = 3, kMeansTrainerFactory: (Int) => KMeansTrainer, slope: Double = 0.01, maxK: Int = 500): Int = {
+  def guessK(data: Seq[Point], runs: Int = 3, kMeansTrainerFactory: (Int) => KMeansTrainer, slope: Double = 0.01, maxK: Int = 500): Int = {
 
     val ks = (
       (2 to 10 by 3) ++
@@ -127,9 +127,6 @@ object KMeans {
 
     KMeans.chooseK(sses, slope)
   }
-  def guessK(data: Seq[Point], runs: Int, kMeansTrainerFactory: (Int) => KMeansTrainer, slope: Double, maxK: Int): Int = {
-    guessK(data.par, runs, kMeansTrainerFactory, slope, maxK)
-  }
 
   /**
    * Choose the best model, by running the prediction `runs` times and picking the model with the minimum SSE.
@@ -139,15 +136,12 @@ object KMeans {
    * @param kMeansTrainer
    * @return
    */
-  def bestModel(trainingData: ParSeq[Point], runs: Int, kMeansTrainer: => KMeansTrainer): (KMeans, Double) = {
+  def bestModel(trainingData: Seq[Point], runs: Int, kMeansTrainer: => KMeansTrainer): (KMeans, Double) = {
     (0 until runs).map(_ => {
       val kmeans = kMeansTrainer.train(trainingData)
       val sse = kmeans.predict(trainingData).map(_.label._2).sum
       (kmeans, sse / trainingData.size)
     }).minBy(_._2)
-  }
-  def bestModel(trainingData: Seq[Point], runs: Int, kMeansTrainer: => KMeansTrainer): (KMeans, Double) = {
-    bestModel(trainingData.par, runs, kMeansTrainer)
   }
 
   private def findK(k: Int, slope: Double, maxK: Int, kFunction: (Double) => Double, step: Double = 1E-9): Double = {
@@ -200,12 +194,8 @@ case class KMeansTrainer(k: Int, maxIter: Int = 100, tolerance: Double = 1E-6, s
    * @param dataPoints
    * @return
    */
-  override def train(dataPoints: ParSeq[Point]): KMeans =
-    train(initialize(k, dataPoints, random.nextLong()), dataPoints)
-
   override def train(dataPoints: Seq[Point]): KMeans = {
-    val parPoints = dataPoints.par
-    train(initialize(k, parPoints, random.nextLong()), parPoints)
+    train(initialize(k, dataPoints, random.nextLong()), dataPoints)
   }
   /**
    * Train a MeanKs model and return the centroids
@@ -214,7 +204,7 @@ case class KMeansTrainer(k: Int, maxIter: Int = 100, tolerance: Double = 1E-6, s
    * @param dataPoints
    * @return
    */
-  def train(initialCentroids: Seq[ClusterPoint], dataPoints: ParSeq[Point]): KMeans = {
+  def train(initialCentroids: Seq[ClusterPoint], dataPoints: Seq[Point]): KMeans = {
 
     def train(oldCentroids: Seq[ClusterPoint], step: Int, done: Boolean): Seq[ClusterPoint] = {
       if (step == maxIter - 1 || done)
@@ -226,7 +216,7 @@ case class KMeansTrainer(k: Int, maxIter: Int = 100, tolerance: Double = 1E-6, s
       }
     }
 
-    def newCentroids(points: ParSeq[Point], clusters: Seq[ClusterPoint]): Seq[ClusterPoint] = {
+    def newCentroids(points: Seq[Point], clusters: Seq[ClusterPoint]): Seq[ClusterPoint] = {
       val pointsByK = KMeans(clusters).predict(points)
       val newClusters = pointsByK.groupBy(_.label._1).map { case (k, kfx) => ClusterPoint(k, mean(kfx.map(_.point))) }.map(cc => (cc.k, cc)).toMap
       // make sure we preserve the number of clusters
@@ -243,9 +233,5 @@ case class KMeansTrainer(k: Int, maxIter: Int = 100, tolerance: Double = 1E-6, s
       case dlp =>
         oldCentroids.map(x => (x.k, x.point)).toMap.get(dlp.k).map(x => x.sqdist(dlp.point))
     }.filter(_.isDefined).map(_.get)
-
-  def train(initialCentroids: Seq[ClusterPoint], dataPoints: Seq[Point]): KMeans = {
-    train(initialCentroids, dataPoints.par)
-  }
 
 }

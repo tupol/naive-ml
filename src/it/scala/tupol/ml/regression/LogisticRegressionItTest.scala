@@ -15,7 +15,7 @@ class LogisticRegressionItTest extends FunSuite with Matchers {
     val X = input.map(arr => 1.0 +: arr.take(2))
     val Y = input.map(arr => arr.takeRight(1).head)
 
-    val trainingData = X.zip(Y).map{ case (point, label) => DoubleLabeledPoint(label, point)}.toStream.par
+    val trainingData = X.zip(Y).map{ case (point, label) => DoubleLabeledPoint(label, point)}.toStream
 
     val initialTheta = Array(0.0, 0.0, 0.0)
 
@@ -45,7 +45,7 @@ class LogisticRegressionItTest extends FunSuite with Matchers {
     val nX = X.map(x => 1.0 +: makePoly(x(0), x(1))).toList
 
 
-    val trainingData = nX.zip(Y).map{ case (point, label) => DoubleLabeledPoint(label, point)}.toStream.par
+    val trainingData = nX.zip(Y).map{ case (point, label) => DoubleLabeledPoint(label, point)}.toStream
 
     val initialTheta = Array.fill(nX.head.size)(0.0)
 

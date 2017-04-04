@@ -3,17 +3,16 @@ package tupol.ml.regression
 import tupol.ml._
 import tupol.ml.pointops._
 
-import scala.collection.parallel.ParSeq
 import scala.math._
 
 /**
  *
  */
-case class LogisticRegression(thetaHistory: ParSeq[Point]) extends Predictor[Point, DoubleLabeledPoint] {
+case class LogisticRegression(thetaHistory: Seq[Point]) extends Predictor[Point, DoubleLabeledPoint] {
 
   import LogisticRegression._
 
-  def this(theta: Point) = this(ParSeq(theta))
+  def this(theta: Point) = this(Seq(theta))
 
   lazy val theta = thetaHistory.head
 
@@ -29,7 +28,7 @@ object LogisticRegression {
 
   def sigmoid(x: Double): Double = 1 / (1 + exp(-x))
 
-  def sigmoid(x: ParSeq[Double]): ParSeq[Double] = x.map(sigmoid)
+  def sigmoid(x: Seq[Double]): Seq[Double] = x.map(sigmoid)
 
   def hypothesys(point: Point, theta: Point): Double = {
     if (theta.size == point.size + 1)
@@ -38,7 +37,7 @@ object LogisticRegression {
       sigmoid(theta |*| point)
   }
 
-  def cost(data: ParSeq[DoubleLabeledPoint], theta: Point, lambda: Double): Double = {
+  def cost(data: Seq[DoubleLabeledPoint], theta: Point, lambda: Double): Double = {
     val X = data.map(_.point)
     val Y = data.map(_.label)
     val m = X.length
@@ -53,7 +52,7 @@ object LogisticRegression {
 
   }
 
-  def gradient(data: ParSeq[DoubleLabeledPoint], theta: Point, lambda: Double): Point = {
+  def gradient(data: Seq[DoubleLabeledPoint], theta: Point, lambda: Double): Point = {
     val X = data.map(_.point)
     val Y = data.map(_.label)
     val m = X.length
@@ -71,11 +70,11 @@ object LogisticRegression {
 case class LogisticRegressionTrainer(theta: Point, maxIter: Int = 10, learningRate: Double = 1, lambda: Double = 1, tolerance: Double = 1E-3)
     extends Trainer[DoubleLabeledPoint, LogisticRegression] {
 
-  def train(data: ParSeq[DoubleLabeledPoint]) = {
+  def train(data: Seq[DoubleLabeledPoint]) = {
 
     import LogisticRegression._
 
-    def train(thetas: ParSeq[Point], step: Int, learningRate: Double, done: Boolean): ParSeq[Point] = {
+    def train(thetas: Seq[Point], step: Int, learningRate: Double, done: Boolean): Seq[Point] = {
       if (step == maxIter || done)
         thetas
       else {
@@ -96,7 +95,7 @@ case class LogisticRegressionTrainer(theta: Point, maxIter: Int = 10, learningRa
 
       }
     }
-    val thetas = train(ParSeq(theta), 0, learningRate, false)
+    val thetas = train(Seq(theta), 0, learningRate, false)
     LogisticRegression(thetas)
 
   }

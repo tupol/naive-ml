@@ -94,15 +94,10 @@ case class XKMeansTrainer(k: Int, maxIter: Int = 100, tolerance: Double = 1E-6, 
    * @param dataPoints
    * @return
    */
-  override def train(dataPoints: ParSeq[Point]): XKMeans =
+  override def train(dataPoints: Seq[Point]): XKMeans =
     train(initialize(k, dataPoints, random.nextLong()), dataPoints)
 
-  override def train(dataPoints: Seq[Point]): XKMeans = {
-    val parPoints = dataPoints.par
-    train(initialize(k, parPoints, random.nextLong()), parPoints)
-  }
-
-  def train(initialCentroids: Seq[Cluster], dataPoints: ParSeq[Point]): XKMeans = {
+  def train(initialCentroids: Seq[Cluster], dataPoints: Seq[Point]): XKMeans = {
 
     def train(oldCentroids: Seq[Cluster], step: Int = 0, done: Boolean = false): Seq[Cluster] = {
       if (step == maxIter - 1 || done)
@@ -114,7 +109,7 @@ case class XKMeansTrainer(k: Int, maxIter: Int = 100, tolerance: Double = 1E-6, 
       }
     }
 
-    def newCentroids(points: ParSeq[Point], clusters: Seq[Cluster]): Seq[Cluster] = {
+    def newCentroids(points: Seq[Point], clusters: Seq[Cluster]): Seq[Cluster] = {
       val pointsByK = points.map(p => (p, new XKMeans(clusters).predict(p)))
       // TODO write an "aggregateBy" version
       val newClusters = pointsByK.groupBy(_._2.k).map {

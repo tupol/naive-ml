@@ -4,8 +4,6 @@ import org.scalatest.{FunSuite, Matchers}
 import tupol.ml._
 import tupol.ml.utils.ClusterGen2D
 
-import scala.collection.parallel.ParSeq
-
 /**
  *
  */
@@ -26,7 +24,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
 
   test("KMeans#guessK integration test for 2 clusters with a large epsilon (a.k.a. relaxed).") {
 
-    val dataPoints = centers_2.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _).par
+    val dataPoints = centers_2.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _)
 
     val bestModel = testGuessK(dataPoints, epsilon = RELAXED_SLOPE, expectedK = 2, expectedKTolerance = 0)
 
@@ -36,7 +34,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
 
   test("KMeans#guessK integration test for 2 clusters with a normal epsilon") {
 
-    val dataPoints = centers_2.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _).par
+    val dataPoints = centers_2.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _)
 
     val bestModel = testGuessK(dataPoints, epsilon = NORMAL_SLOPE, expectedK = 2, expectedKTolerance = 0)
 
@@ -46,7 +44,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
 
   test("KMeans#guessK integration test for 2 clusters with a small epsilon (a.k.a. conservative).") {
 
-    val dataPoints = centers_2.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _).par
+    val dataPoints = centers_2.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _)
 
     val bestModel = testGuessK(dataPoints, epsilon = CONSERVATIVE_SLOPE, expectedK = 8, expectedKTolerance = 2)
 
@@ -56,7 +54,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
 
   test("KMeans#guessK integration test for 4 clusters with a large epsilon (a.k.a. relaxed).") {
 
-    val dataPoints = centers_4.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _).par
+    val dataPoints = centers_4.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _)
 
     val bestModel = testGuessK(dataPoints, epsilon = RELAXED_SLOPE, expectedK = 3, expectedKTolerance = 1)
 
@@ -66,7 +64,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
 
   test("KMeans#guessK integration test for 4 clusters with a normal epsilon") {
 
-    val dataPoints = centers_4.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _).par
+    val dataPoints = centers_4.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _)
 
     val bestModel = testGuessK(dataPoints, epsilon = NORMAL_SLOPE, expectedK = 4, expectedKTolerance = 1)
 
@@ -76,7 +74,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
 
   test("KMeans#guessK integration test for 4 clusters with a small epsilon (a.k.a. conservative).") {
 
-    val dataPoints = centers_4.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _).par
+    val dataPoints = centers_4.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _)
 
     val bestModel = testGuessK(dataPoints, epsilon = CONSERVATIVE_SLOPE, expectedK = 14, expectedKTolerance = 4)
 
@@ -87,7 +85,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
 
     test("KMeans#guessK integration test for 9 clusters with a large epsilon (a.k.a. relaxed).") {
 
-      val dataPoints = centers_9.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _).par
+      val dataPoints = centers_9.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _)
 
       val bestModel = testGuessK(dataPoints, epsilon = RELAXED_SLOPE, expectedK = 6, expectedKTolerance = 3)
 
@@ -97,7 +95,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
 
     test("KMeans#guessK integration test for 9 clusters with a normal epsilon") {
 
-      val dataPoints = centers_9.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _).par
+      val dataPoints = centers_9.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _)
 
       val bestModel = testGuessK(dataPoints, epsilon = NORMAL_SLOPE, expectedK = 10, expectedKTolerance = 2)
 
@@ -107,7 +105,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
 
     test("KMeans#guessK integration test for 9 clusters with a small epsilon (a.k.a. conservative).") {
 
-      val dataPoints = centers_9.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _).par
+      val dataPoints = centers_9.map(p => disc(CLUSTER_SIZE, p)).reduce(_ ++ _)
 
       val bestModel = testGuessK(dataPoints, epsilon = CONSERVATIVE_SLOPE, expectedK = 44, expectedKTolerance = 4)
 
@@ -120,7 +118,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
       val Ks = 20
       val random = new util.Random()
       val originalCentroids = (0 until Ks).map { _ => Array(random.nextInt(Ks).toDouble, random.nextInt(Ks).toDouble) }
-      val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5)).par
+      val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5))
 
       val bestModel = testGuessK(dataPoints, epsilon = RELAXED_SLOPE, expectedK = 18, expectedKTolerance = 4)
 
@@ -133,7 +131,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
       val Ks = 20
       val random = new util.Random()
       val originalCentroids = (0 until Ks).map { _ => Array(random.nextInt(Ks).toDouble, random.nextInt(Ks).toDouble) }
-      val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5)).par
+      val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5))
 
       val bestModel = testGuessK(dataPoints, epsilon = NORMAL_SLOPE, expectedK = 20, expectedKTolerance = 5)
 
@@ -146,7 +144,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
       val Ks = 20
       val random = new util.Random()
       val originalCentroids = (0 until Ks).map { _ => Array(random.nextInt(Ks).toDouble, random.nextInt(Ks).toDouble) }
-      val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5)).par
+      val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5))
 
       val bestModel = testGuessK(dataPoints, epsilon = CONSERVATIVE_SLOPE, expectedK = 150, expectedKTolerance = 50)
 
@@ -159,7 +157,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
       val Ks = 50
       val random = new util.Random()
       val originalCentroids = (0 until Ks).map { _ => Array(random.nextInt(Ks).toDouble, random.nextInt(Ks).toDouble) }
-      val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5)).par
+      val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5))
 
       val bestModel = testGuessK(dataPoints, epsilon = RELAXED_SLOPE, expectedK = 70, expectedKTolerance = 10)
 
@@ -172,7 +170,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
     val Ks = 50
     val random = new util.Random()
     val originalCentroids = (0 until Ks).map { _ => Array(random.nextInt(Ks).toDouble, random.nextInt(Ks).toDouble) }
-    val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5)).par
+    val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5))
 
     val bestModel = testGuessK(dataPoints, epsilon = NORMAL_SLOPE, expectedK = 50, expectedKTolerance = 15)
 
@@ -185,7 +183,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
     val Ks = 50
     val random = new util.Random()
     val originalCentroids = (0 until Ks).map { _ => Array(random.nextInt(Ks).toDouble, random.nextInt(Ks).toDouble) }
-    val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5)).par
+    val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5))
 
     val bestModel = testGuessK(dataPoints, epsilon = CONSERVATIVE_SLOPE, expectedK = 100, expectedKTolerance = 40)
 
@@ -202,7 +200,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
 
 //      val originalCentroids = (0  until 20 by 2).flatMap( x=> (0 until 16 by 2).map(y => Array(x.toDouble, y.toDouble)))
 
-      val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5)).par
+      val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5))
 
       val bestModel = testGuessK(dataPoints, epsilon = NORMAL_SLOPE, expectedK = 90, expectedKTolerance = 20)
 
@@ -223,7 +221,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
 
     val originalCentroids = (0 until Ks).map { _ => Array(random.nextInt(Ks).toDouble, random.nextInt(Ks).toDouble) }
 
-    val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5)).par
+    val dataPoints = originalCentroids.flatMap(p => disc(CLUSTER_SIZE, p, 0.5))
 
     val bestModel = testGuessK(dataPoints, epsilon = NORMAL_SLOPE, expectedK = 220, expectedKTolerance = 40)
 
@@ -231,7 +229,7 @@ class KMeansGuessKItTest extends FunSuite with Matchers {
 
   }
 
-  private def testGuessK(dataPoints: ParSeq[Point], epsilon: Double, expectedK: Int, expectedKTolerance: Int, runs: Int = 5) = {
+  private def testGuessK(dataPoints: Seq[Point], epsilon: Double, expectedK: Int, expectedKTolerance: Int, runs: Int = 5) = {
 
     val kMeansTrainerFactory = (k: Int) => KMeansTrainer(k, 200, 1E-6)
 

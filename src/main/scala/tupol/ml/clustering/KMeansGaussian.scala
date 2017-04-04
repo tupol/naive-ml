@@ -10,7 +10,7 @@ case class KMeansCxPrediction(k: Int, distance: Double, probability: Double, pro
 /**
  *
  */
-case class KMeansGaussian(kmeans: KMeans, varianceByCluster: ParSeq[ClusterPoint]) extends Predictor[Point, KMeansCxPrediction] {
+case class KMeansGaussian(kmeans: KMeans, varianceByCluster: Seq[ClusterPoint]) extends Predictor[Point, KMeansCxPrediction] {
 
   override def predict(data: Point): KMeansCxPrediction = {
 
@@ -54,7 +54,7 @@ case class KMeansGaussian(kmeans: KMeans, varianceByCluster: ParSeq[ClusterPoint
  */
 case class KMeansGaussianTrainer(kmeans: KMeans) extends Trainer[Point, KMeansGaussian] {
 
-  override def train(data: ParSeq[Point]): KMeansGaussian = {
+  override def train(data: Seq[Point]): KMeansGaussian = {
     val clusteredData = kmeans.predict(data)
     val varianceByK = clusteredData.map(dlp => (dlp.label._1, dlp.point)).groupBy(_._1).map {
       case (k, kfx) =>

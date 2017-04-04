@@ -3,8 +3,6 @@ package tupol.ml.regression
 import org.scalatest.{ FunSuite, Matchers }
 import tupol.ml.DoubleLabeledPoint
 
-import scala.collection.parallel.ParSeq
-
 /**
  *
  */
@@ -27,7 +25,7 @@ class LogisticRegressionSpec extends FunSuite with Matchers {
 
   test("LogisticRegression#cost un-regularized 1") {
 
-    val data = ParSeq(
+    val data = Seq(
       DoubleLabeledPoint(1.0, Array(1.0, 8.0, 1.0, 6.0)),
       DoubleLabeledPoint(0.0, Array(1.0, 3.0, 5.0, 7.0)),
       DoubleLabeledPoint(1.0, Array(1.0, 4.0, 9.0, 2.0))
@@ -41,7 +39,7 @@ class LogisticRegressionSpec extends FunSuite with Matchers {
 
   test("LogisticRegression#cost un-regularized 2") {
 
-    val data = ParSeq(
+    val data = Seq(
       DoubleLabeledPoint(1.0, Array(1.0, 16.0, 2.0, 3.0, 13.0)),
       DoubleLabeledPoint(0.0, Array(1.0, 5.0, 11.0, 10.0, 8.0)),
       DoubleLabeledPoint(1.0, Array(1.0, 9.0, 7.0, 6.0, 12.0)),
@@ -56,7 +54,7 @@ class LogisticRegressionSpec extends FunSuite with Matchers {
 
   test("LogisticRegression#cost regularized") {
 
-    val data = ParSeq(
+    val data = Seq(
       DoubleLabeledPoint(1.0, Array(1.0, 8.0, 1.0, 6.0)),
       DoubleLabeledPoint(0.0, Array(1.0, 3.0, 5.0, 7.0)),
       DoubleLabeledPoint(1.0, Array(1.0, 4.0, 9.0, 2.0))
@@ -70,7 +68,7 @@ class LogisticRegressionSpec extends FunSuite with Matchers {
 
   test("LogisticRegression#gradient un-regularized 1") {
 
-    val data = ParSeq(
+    val data = Seq(
       DoubleLabeledPoint(1.0, Array(1.0, 8.0, 1.0, 6.0)),
       DoubleLabeledPoint(0.0, Array(1.0, 3.0, 5.0, 7.0)),
       DoubleLabeledPoint(1.0, Array(1.0, 4.0, 9.0, 2.0))
@@ -86,7 +84,7 @@ class LogisticRegressionSpec extends FunSuite with Matchers {
 
   test("LogisticRegression#gradient un-regularized 2") {
 
-    val data = ParSeq(
+    val data = Seq(
       DoubleLabeledPoint(1.0, Array(1.0, 16.0, 2.0, 3.0, 13.0)),
       DoubleLabeledPoint(0.0, Array(1.0, 5.0, 11.0, 10.0, 8.0)),
       DoubleLabeledPoint(1.0, Array(1.0, 9.0, 7.0, 6.0, 12.0)),
@@ -95,7 +93,7 @@ class LogisticRegressionSpec extends FunSuite with Matchers {
 
     val theta = Array(-1.0, 2.0, -3.0, 4.0, -5.0)
 
-    val expectedGradient = Array(-0.2500000005056777, -5.250000002011198, 1.2499999928901242, 1.4999999923655705, -6.000000000437538)
+    val expectedGradient = Array(-0.2500000005056777, -5.250000002011199, 1.2499999928901242, 1.4999999923655705, -6.000000000437539)
 
     LogisticRegression.gradient(data, theta, 0.0) should be(expectedGradient)
 
@@ -103,7 +101,7 @@ class LogisticRegressionSpec extends FunSuite with Matchers {
 
   test("LogisticRegression#gradient regularized") {
 
-    val data = ParSeq(
+    val data = Seq(
       DoubleLabeledPoint(1.0, Array(1.0, 8.0, 1.0, 6.0)),
       DoubleLabeledPoint(0.0, Array(1.0, 3.0, 5.0, 7.0)),
       DoubleLabeledPoint(1.0, Array(1.0, 4.0, 9.0, 2.0))
@@ -119,7 +117,7 @@ class LogisticRegressionSpec extends FunSuite with Matchers {
 
   test("LogisticRegression#predict 1") {
 
-    val data = ParSeq(
+    val data = Seq(
       Array(8.0, 1.0, 6.0),
       Array(3.0, 5.0, 7.0),
       Array(4.0, 9.0, 2.0)
@@ -128,7 +126,7 @@ class LogisticRegressionSpec extends FunSuite with Matchers {
     val theta = Array(0.0, 1.0, 10.0)
 
     val expectedPredictions = Array(1.0, 1.0, 1.0)
-    val actualPredictions = LogisticRegression(ParSeq(theta)).predict(data).map(_.label).toArray
+    val actualPredictions = LogisticRegression(Seq(theta)).predict(data).map(_.label).toArray
 
     actualPredictions should be(expectedPredictions)
 
@@ -136,7 +134,7 @@ class LogisticRegressionSpec extends FunSuite with Matchers {
 
   test("LogisticRegression#predict 2") {
 
-    val data = ParSeq(
+    val data = Seq(
       Array(8.0, 1.0, 6.0),
       Array(3.0, 5.0, 7.0),
       Array(4.0, 9.0, 2.0)
@@ -145,7 +143,7 @@ class LogisticRegressionSpec extends FunSuite with Matchers {
     val theta = Array(4.0, 3.0, -8.0)
 
     val expectedPredictions = Array(0.0, 0.0, 1.0)
-    val actualPredictions = LogisticRegression(ParSeq(theta)).predict(data).map(_.label).toArray
+    val actualPredictions = LogisticRegression(Seq(theta)).predict(data).map(_.label).toArray
 
     actualPredictions should be(expectedPredictions)
 
@@ -153,7 +151,7 @@ class LogisticRegressionSpec extends FunSuite with Matchers {
 
   test("LogisticRegression#predict 3") {
 
-    val data = ParSeq(
+    val data = Seq(
       Array(8.0, 1.0, 6.0),
       Array(3.0, 5.0, 7.0),
       Array(4.0, 9.0, 2.0)
@@ -162,7 +160,7 @@ class LogisticRegressionSpec extends FunSuite with Matchers {
     val theta = Array(3.0, 0.0, -8.0)
 
     val expectedPredictions = Array(0.0, 0.0, 0.0)
-    val actualPredictions = LogisticRegression(ParSeq(theta)).predict(data).map(_.label).toArray
+    val actualPredictions = LogisticRegression(Seq(theta)).predict(data).map(_.label).toArray
 
     actualPredictions should be(expectedPredictions)
 

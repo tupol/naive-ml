@@ -1,7 +1,5 @@
 package tupol.ml
 
-import scala.collection.parallel.ParSeq
-
 /**
  * Additional operations for linalg.Point
  */
@@ -202,18 +200,16 @@ package object pointops {
     vector1.zip(vector2).map(x => (x._2 - x._1) * (x._2 - x._1)).sum
   }
 
-  private[ml] def mean(vectors: ParSeq[Point]): Point = {
+  private[ml] def mean(vectors: Seq[Point]): Point = {
     require(vectors.size > 0)
     vectors.reduce((v1, v2) => v1.zip(v2).map(x => x._1 + x._2)) / vectors.size
   }
-
-  private[ml] def mean(vectors: Seq[Point]): Point = mean(vectors.par)
 
   /**
    * Decorate the Sequences of Points with new operations
    * @param points
    */
-  implicit class ParPointsOps(points: ParSeq[Point]) {
+  implicit class PointsOps(points: Seq[Point]) {
 
     val size = points.size
 

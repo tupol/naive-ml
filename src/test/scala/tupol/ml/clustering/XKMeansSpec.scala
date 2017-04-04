@@ -157,7 +157,7 @@ class XKMeansSpec extends FunSuite with Matchers with LazyLogging {
 
     val kCenters = Seq(Array(0.0, 0.0), Array(0.0, 2.0), Array(2.0, 2.0))
     val clusters = dataPoints(kCenters)
-    val actual = XKMeansTrainer(3, 200, 1E-8, 77977).train(clusters.toParArray).clusterCenters.values.toSeq
+    val actual = XKMeansTrainer(3, 200, 1E-8, 77977).train(clusters).clusterCenters.values.toSeq
 
     val epsilon = 0.2
 

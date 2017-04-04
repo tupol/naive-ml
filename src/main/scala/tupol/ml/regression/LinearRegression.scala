@@ -3,16 +3,14 @@ package tupol.ml.regression
 import tupol.ml._
 import tupol.ml.pointops._
 
-import scala.collection.parallel.ParSeq
-
 /**
  *
  */
-case class LinearRegression(thetaHistory: ParSeq[Point]) extends Predictor[Point, DoubleLabeledPoint] {
+case class LinearRegression(thetaHistory: Seq[Point]) extends Predictor[Point, DoubleLabeledPoint] {
 
   import LinearRegression._
 
-  def this(theta: Point) = this(ParSeq(theta))
+  def this(theta: Point) = this(Seq(theta))
 
   lazy val theta = thetaHistory.head
 
@@ -34,28 +32,21 @@ object LinearRegression {
   }
 
   def sse(data: Seq[DoubleLabeledPoint], theta: Point): Double =
-    sse(data.par, theta)
-
-  def sse(data: ParSeq[DoubleLabeledPoint], theta: Point): Double =
     errors(data, theta).map(e => e * e).sum
 
   def cost(data: Seq[DoubleLabeledPoint], theta: Point): Double = {
-    cost(data.par, theta)
-  }
-  def cost(data: ParSeq[DoubleLabeledPoint], theta: Point): Double = {
     sse(data, theta) / data.size / 2
   }
 
-  def errors(data: ParSeq[DoubleLabeledPoint], theta: Point): ParSeq[Double] = {
+  def errors(data: Seq[DoubleLabeledPoint], theta: Point): Seq[Double] = {
     val X = data.map(_.point)
     val Y = data.map(_.label)
     val predictions = new LinearRegression(theta).predict(X)
     predictions.map(_.label).zip(Y).map { case (p, y) => (p - y) }
   }
 
-  def gradient(data: ParSeq[DoubleLabeledPoint], theta: Point): Point =
-    data.map { dlp => (dlp.point * (hypothesys(dlp.point, theta) - dlp.label)) }.
-      sumByDimension / data.size
+  def gradient(data: Seq[DoubleLabeledPoint], theta: Point): Point =
+    data.map { dlp => (dlp.point * (hypothesys(dlp.point, theta) - dlp.label)) }.sumByDimension / data.size
 
 }
 
@@ -64,9 +55,9 @@ case class LinearRegressionTrainer(theta: Point, maxIter: Int = 10, learningRate
 
   import LinearRegression._
 
-  def train(data: ParSeq[DoubleLabeledPoint]) = {
+  def train(data: Seq[DoubleLabeledPoint]) = {
 
-    def train(thetas: ParSeq[Point], step: Int, done: Boolean): ParSeq[Point] = {
+    def train(thetas: Seq[Point], step: Int, done: Boolean): Seq[Point] = {
       if (step == maxIter || done)
         thetas
       else {
@@ -79,7 +70,7 @@ case class LinearRegressionTrainer(theta: Point, maxIter: Int = 10, learningRate
         train(newTheta +: thetas, step + 1, done)
       }
     }
-    val thetas = train(ParSeq(theta), 0, false)
+    val thetas = train(Seq(theta), 0, false)
     LinearRegression(thetas)
 
   }
@@ -91,9 +82,9 @@ case class LinearRegressionOptimizedTrainer(theta: Point, maxIter: Int = 10, lea
 
   import LinearRegression._
 
-  def train(data: ParSeq[DoubleLabeledPoint]) = {
+  def train(data: Seq[DoubleLabeledPoint]) = {
 
-    def train(thetas: ParSeq[Point], step: Int, learningRate: Double, done: Boolean): ParSeq[Point] = {
+    def train(thetas: Seq[Point], step: Int, learningRate: Double, done: Boolean): Seq[Point] = {
       if (step == maxIter || done)
         thetas
       else {
@@ -111,7 +102,7 @@ case class LinearRegressionOptimizedTrainer(theta: Point, maxIter: Int = 10, lea
         }
       }
     }
-    val thetas = train(ParSeq(theta), 0, learningRate, false)
+    val thetas = train(Seq(theta), 0, learningRate, false)
     LinearRegression(thetas)
 
   }
