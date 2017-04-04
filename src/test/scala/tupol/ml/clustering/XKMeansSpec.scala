@@ -1,6 +1,7 @@
 package tupol.ml.clustering
 
-import org.scalatest.{FunSuite, Matchers}
+import com.typesafe.scalalogging.LazyLogging
+import org.scalatest.{ FunSuite, Matchers }
 import tupol.ml._
 import tupol.ml.pointops._
 import tupol.ml.stats.Stats
@@ -9,7 +10,7 @@ import tupol.ml.utils.ClusterGen2D
 /**
  *
  */
-class XKMeansSpec extends FunSuite with Matchers {
+class XKMeansSpec extends FunSuite with Matchers with LazyLogging {
 
   import ClusterGen2D._
   import XKMeansTrainer._
@@ -29,14 +30,7 @@ class XKMeansSpec extends FunSuite with Matchers {
     Array(0.0, 1.0)
   )
 
-  val dataPoints1L = disc(1000, Array(0.0, 0.0))
-
-  val dataPoints2L = (disc(1000, Array(0.0, 0.0)) ++ disc(1000, Array(2.0, 2.0)))
-
-  val dataPoints3L = (disc(1000, Array(0.0, 0.0)) ++ disc(1000, Array(2.0, 0.0)) ++ disc(1000, Array(0.0, 2.0)))
-
-
-  def dataPoints(centroids: Seq[Point]): Seq[Point] = centroids.flatMap(p => disc(600, p, 0.5))
+  def dataPoints(centroids: Seq[Point]): Seq[Point] = centroids.flatMap(p => disc(600, p, 0.5, 77777))
 
   test("XKMeans#initialize test k = 0") {
 
@@ -121,7 +115,21 @@ class XKMeansSpec extends FunSuite with Matchers {
     assert(actual === expected)
   }
 
-  test("XKMeans#train test 2 discs") {
+  test("KMeansGaussian#train test 1 disc K=1") {
+
+    val kCenters = Seq(Array(0.5, 0.5))
+    val clusters = dataPoints(kCenters)
+
+    val model = XKMeansTrainer(1, 500, 0.1).train(clusters)
+
+    val expectedProbabilities = Seq(1.0, 0.6, 0.005, 0.000009, 0.0000009)
+    val actualProbabilities = kCenters.map(model.predict)
+
+    expectedProbabilities.zip(actualProbabilities.map(_.probability)).forall { case (e, a) => a <= 1.1 * e && a >= 0.9 * e }
+
+  }
+
+  test("XKMeans#train and predict on 2 discs") {
 
     val kCenters = Seq(Array(0.0, 0.0), Array(0.0, 2.0))
     val clusters = dataPoints(kCenters)
@@ -129,27 +137,19 @@ class XKMeansSpec extends FunSuite with Matchers {
     val model = XKMeansTrainer(2, 200, 1E-6).train(clusters)
     val actual = model.clusterCenters.values.map(_.statsByDim.avg).toSeq
 
-    val epsilon = 0.1
+    val epsilon = 0.2
 
     kCenters foreach { e =>
       val (cc, distance) = actual.map(p => (p, math.sqrt(distance2(p, e)))).sortWith(_._2 < _._2).head
-      println(s"For expected centroid ${e.mkString("[", ",", "]")}, the closest predicted cluster was found " +
+      logger.debug(s"For expected centroid ${e.mkString("[", ",", "]")}, the closest predicted cluster was found " +
         s"at ${cc.mkString("[", ",", "]")}; distance=$distance.")
       distance should be < epsilon
     }
 
-
     val expectedProbabilities = Seq(1.0, 0.6, 0.005, 0.000009, 0.0000009)
     val actualProbabilities = kCenters.map(model.predict)
 
-    expectedProbabilities.zip(actualProbabilities.map(_.probability)).forall { case (e, a) => e >= a }
-
-    println("Clusters")
-    model.clusterCenters.toSeq.map(cPointToStr).foreach(println)
-    println("Predictions")
-    points.toSeq.foreach { point =>
-      println(f"${predPointToStr(kmeans.predict(point))}  ${kmg.predict(point).probability}%12.10f  ${(kmg.predict(point))}")
-    }
+    expectedProbabilities.zip(actualProbabilities.map(_.probability)).forall { case (e, a) => a <= 1.1 * e && a >= 0.9 * e }
 
   }
 
@@ -157,31 +157,29 @@ class XKMeansSpec extends FunSuite with Matchers {
 
     val kCenters = Seq(Array(0.0, 0.0), Array(0.0, 2.0), Array(2.0, 2.0))
     val clusters = dataPoints(kCenters)
-    val actual = XKMeansTrainer(3, 200, 1E-8).train(clusters).clusterCenters.values
+    val actual = XKMeansTrainer(3, 200, 1E-8, 77977).train(clusters.toParArray).clusterCenters.values.toSeq
 
     val epsilon = 0.2
 
     kCenters foreach { e =>
-      val (cc, distance) = actual.map(p => (p, math.sqrt(distance2(p, e)))).sortWith(_._2 < _._2).head
-      println(s"For expected centroid ${e.mkString("[", ",", "]")}, the closest predicted cluster was found " +
-        s"at ${cc.mkString("[", ",", "]")}; distance=$distance.")
+      val (cc, distance) = actual.map(p => (p, math.sqrt(distance2(p.point, e)))).sortWith(_._2 < _._2).head
+      logger.debug(s"For expected centroid ${e.mkString("[", ",", "]")}, the closest predicted cluster was found " +
+        s"at ${cc.point.mkString("[", ",", "]")}; distance=$distance.")
       distance should be < epsilon
     }
   }
 
-    test("XKMeans#metaclustering???") {
+  test("XKMeans#metaclustering???") {
 
     val kCenters = Seq(Array(0.0, 0.0), Array(0.0, 2.0), Array(2.0, 2.0))
     val k = kCenters.size
     val clusters = dataPoints(kCenters)
-    val actual = XKMeansTrainer(8, 200, 1E-8).train(clusters).clusterCenters.values
-
-    val epsilon = 0.2
-
+    val model = XKMeansTrainer(14, 200, 1E-8).train(clusters)
+    val actual = model.clusterCenters.values
 
     def stats2Str(stats: Stats[Point]) = s"Stats(${stats.count},${stats.min.toSeq},${stats.avg.toSeq},${stats.max.toSeq},${stats.variance.toSeq},${stats.stdev.toSeq},${stats.sse.toSeq})"
 
-    def createMetaClusters(pairs: Iterable[(Int, Int)]) = pairs
+    def createMetaClusters(pairs: Iterable[(Int, Int)]): Seq[Set[Int]] = pairs
       .foldLeft(Seq[Set[Int]]()) { (acc, p) =>
         val accf = acc.filter(seq => seq.contains(p._1) || seq.contains(p._2))
         val accnf = acc.filterNot(x => accf.contains(x))
@@ -189,60 +187,49 @@ class XKMeansSpec extends FunSuite with Matchers {
         else accf.map(x => x + p._1 + p._2) ++ accnf
       }
 
-
-    actual.toSeq.sortBy(_.k).foreach(p => println(f"${p.k}%2d | ${stats2Str(p.statsByDim)}"))
-
-    val ks = actual
-
-    val dists = ks.map { ok =>
-      val (dist, closestK) = ks.filterNot(_.k == ok.k).map { x => (x.statsByDim.avg.sqdist(ok.statsByDim.avg), x) }.minBy(_._1)
+    val dists = actual.map { ok =>
+      val (dist, closestK) = actual.filterNot(_.k == ok.k).map { x => (x.statsByDim.avg.sqdist(ok.statsByDim.avg), x) }.minBy(_._1)
       (ok, closestK, dist)
     }
 
+    //    println("-----------------------")
+    //    actual.toSeq.sortBy(_.k).foreach(p => println(f"${p.k}%2d | ${stats2Str(p.statsByDim)}"))
 
-    println("-----------------------")
-
-
-    val mkp0 = dists.map { case (ok, ck, dist) =>
-      //      val threshold = 2.0 * (ok.stats.stdev + ck.stats.stdev)
-      val threshold = 3.0 * math.max(ok.stats.stdev, ck.stats.stdev)
-      (ok, ck, dist, threshold)
-    }.filter(x => x._3 <= x._4)
-      .map { case (ok, ck, dist, threshold) => (ok.k, ck.k) }
-
-    dists.map { case (ok, ck, dist) =>
-      val threshold = 3.0 * math.max(ok.stats.stdev, ck.stats.stdev)
-      (ok, ck, dist, threshold)
-    }.foreach { case (ok, ck, dist, threshold) =>
-      println(s"* ${ok.k} to ${ck.k}: $dist  |  $threshold")
-      if (dist <= threshold) {
-        println(s"    2 * max(${(ok.stats.stdev)}, ${(ck.stats.stdev)}) = $threshold")
-      }
-    }
-
-    val mks0 = createMetaClusters(mkp0)
-    ks.map(_.k).filterNot(x => mks0.flatMap(z => z).toSeq.contains(x)).foreach(println)
-
-    println("-----------------------")
-
-    val zero = ks.map(cc => Set(cc.k))
-    val mkp1 = ks.map { ok =>
-      val newKs = ks.filterNot(_ == ok).toSeq
-      (ok.k, new XKMeans(newKs).predict(ok.point))
-    }
-      .filter(_._2.probability > 0.01)
-      .map(x => (x._1, x._2.k))
-
-    val mks1 = createMetaClusters(mkp1)
-
-    mks1.foreach(println)
-    ks.map(_.k).filterNot(x => mks1.flatMap(z => z).toSeq.contains(x)).foreach(println)
+    //    println("-----------------------")
+    //    MetaCluster.fromModel(model, 0.001).map(x => x.name).foreach(println)
 
   }
 
-  private def pointToStr(point: Point) = point.toSeq.map(x => f"$x%+12.10f").mkString("[", ", ", "]")
-  private def cPointToStr(lp: ClusterPoint) = f"(${lp.k}%3d ${pointToStr(lp.point)})"
-  private def predPointToStr(lp: KMeansLabeledPoint) = f"(${lp.label._1}%3d (${lp.label._2}%+12.10f) ${pointToStr(lp.point)})"
+}
+
+case class MetaCluster(clusters: Set[Cluster]) {
+  def name = clusters.toSeq.map(_.k).sorted.mkString(",")
+}
+
+object MetaCluster {
+
+  def fromModel(model: XKMeans, probabilityThreshold: Double = 0.01): Seq[MetaCluster] = {
+    val clusters = model.clusterCenters.values
+    val closeClusters: Iterable[(Cluster, Cluster)] = clusters.map { ok =>
+      val newKs = clusters.filterNot(_ == ok)
+      (ok, new XKMeans(newKs.toSeq).predict(ok.point))
+    }
+      .filter(_._2.probability > probabilityThreshold)
+      .map(x => (x._1, model.clusterCenters(x._2.k)))
+
+    val metaK = createMetaClusters(closeClusters)
+
+    createMetaClusters(clusters.map(cc => (cc, cc)), metaK.map(_.clusters))
+
+  }
+
+  private def createMetaClusters(pairs: Iterable[(Cluster, Cluster)], initialMKs: Seq[Set[Cluster]] = Seq[Set[Cluster]]()): Seq[MetaCluster] = pairs
+    .foldLeft(initialMKs) { (acc, p) =>
+      val accf = acc.filter(seq => seq.contains(p._1) || seq.contains(p._2))
+      val accnf = acc.filterNot(x => accf.contains(x))
+      if (accf.isEmpty) Set(p._1, p._2) +: accnf
+      else accf.map(x => x + p._1 + p._2) ++ accnf
+    }.map(MetaCluster(_))
 
 }
 

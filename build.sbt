@@ -4,7 +4,7 @@ organization := "tupol"
 
 version := "0.1.0"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 
 // ------------------------------
@@ -14,7 +14,9 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.4" % "it,test",
   "org.scalanlp" %% "breeze" % "0.12",
   "org.scalanlp" %% "breeze-natives" % "0.12",
-  "org.scalanlp" %% "breeze-viz" % "0.12"
+  "org.scalanlp" %% "breeze-viz" % "0.12",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
+  "org.slf4j" % "slf4j-log4j12" % "1.7.25"
 )
 
 

@@ -17,14 +17,13 @@ case class XKMeans(clusterCenters: Map[Int, Cluster]) extends Predictor[Point, X
 
   def this(centroids: Seq[Cluster]) = this(centroids.map(cc => (cc.k, cc)).toMap)
 
-
   /**
    * Predict the cluster a point belongs to.
    *
    */
   override def predict(data: Point): XKMeansCxPrediction = {
 
-    val (k, distance) = clusterCenters.values.map( cc => (cc.k, data.sqdist(cc.point)) ).minBy(_._2)
+    val (k, distance) = clusterCenters.values.map(cc => (cc.k, data.sqdist(cc.point))).minBy(_._2)
 
     def predictByDimension(data: Point): Point = {
 
@@ -50,7 +49,7 @@ case class XKMeans(clusterCenters: Map[Int, Cluster]) extends Predictor[Point, X
 
 }
 
-case class Cluster(k: Int, stats : Stats[Double], statsByDim: Stats[Point]) {
+case class Cluster(k: Int, stats: Stats[Double], statsByDim: Stats[Point]) {
   lazy val size = stats.count
   lazy val point = statsByDim.avg
 }
@@ -63,12 +62,16 @@ object XKMeansTrainer {
       .foldLeft(Seq[Point]())((clusters, point) => points(point) +: clusters)
       .take(k)
       .zipWithIndex
-      .map{ case(p, k) => Cluster(k, Stats.fromDouble(0), Stats.fromPoint(p)) }
+      .map { case (p, k) => Cluster(k, Stats.fromDouble(0), Stats.fromPoint(p)) }
   }
 
   def initialize(k: Int, points: Seq[Point], seed: Long = Random.nextLong): Seq[Cluster] = {
     initialize(k, points.par, seed)
   }
+
+  def pointsToCentroids(points: Seq[Point]) = points
+    .zipWithIndex
+    .map { case (p, k) => Cluster(k, Stats.fromDouble(0), Stats.fromPoint(p)) }
 }
 
 /**
@@ -101,7 +104,7 @@ case class XKMeansTrainer(k: Int, maxIter: Int = 100, tolerance: Double = 1E-6, 
 
   def train(initialCentroids: Seq[Cluster], dataPoints: ParSeq[Point]): XKMeans = {
 
-    def train(oldCentroids: Seq[Cluster], step: Int, done: Boolean): Seq[Cluster] = {
+    def train(oldCentroids: Seq[Cluster], step: Int = 0, done: Boolean = false): Seq[Cluster] = {
       if (step == maxIter - 1 || done)
         oldCentroids
       else {
@@ -114,12 +117,14 @@ case class XKMeansTrainer(k: Int, maxIter: Int = 100, tolerance: Double = 1E-6, 
     def newCentroids(points: ParSeq[Point], clusters: Seq[Cluster]): Seq[Cluster] = {
       val pointsByK = points.map(p => (p, new XKMeans(clusters).predict(p)))
       // TODO write an "aggregateBy" version
-      pointsByK.groupBy(_._2.k).map {
+      val newClusters = pointsByK.groupBy(_._2.k).map {
         case (k, kfx) =>
           val statsByDist = kfx.map(xp => Stats.fromDouble(xp._2.distance)).reduce(_ |+| _)
           val statsByDim = kfx.map(xp => Stats.fromPoint(xp._1)).reduce(_ |+| _)
           Cluster(k, statsByDist, statsByDim)
-      }.toList
+      }.map(cc => (cc.k, cc)).toMap
+      // make sure we preserve the number of clusters
+      clusters.map { oc => newClusters.getOrElse(oc.k, oc) }
     }
 
     def centroidsMovements(oldCentroids: Seq[Cluster], newCentroids: Seq[Cluster]) = {
@@ -129,8 +134,7 @@ case class XKMeansTrainer(k: Int, maxIter: Int = 100, tolerance: Double = 1E-6, 
       }
     }
 
-    val centroids = train(initialCentroids, 0, false)
-    new XKMeans(centroids)
+    new XKMeans(train(initialCentroids))
   }
 
 }

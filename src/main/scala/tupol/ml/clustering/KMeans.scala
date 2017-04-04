@@ -228,8 +228,9 @@ case class KMeansTrainer(k: Int, maxIter: Int = 100, tolerance: Double = 1E-6, s
 
     def newCentroids(points: ParSeq[Point], clusters: Seq[ClusterPoint]): Seq[ClusterPoint] = {
       val pointsByK = KMeans(clusters).predict(points)
-      val newClusters = pointsByK.groupBy(_.label._1).map { case (k, kfx) => ClusterPoint(k, mean(kfx.map(_.point))) }.toSeq
-      newClusters.toList
+      val newClusters = pointsByK.groupBy(_.label._1).map { case (k, kfx) => ClusterPoint(k, mean(kfx.map(_.point))) }.map(cc => (cc.k, cc)).toMap
+      // make sure we preserve the number of clusters
+      clusters.map { oc => newClusters.getOrElse(oc.k, oc) }
     }
 
     val centroids = train(initialCentroids, 0, false)
@@ -248,4 +249,3 @@ case class KMeansTrainer(k: Int, maxIter: Int = 100, tolerance: Double = 1E-6, s
   }
 
 }
-
