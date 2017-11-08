@@ -7,9 +7,7 @@ import tupol.ml.pointops._
 import tupol.ml.stats.Stats
 import tupol.ml.utils.ClusterGen2D
 
-/**
- *
- */
+
 class XKMeansSpec extends FunSuite with Matchers with LazyLogging {
 
   import ClusterGen2D._
@@ -30,7 +28,7 @@ class XKMeansSpec extends FunSuite with Matchers with LazyLogging {
     Array(0.0, 1.0)
   )
 
-  def dataPoints(centroids: Seq[Point]): Seq[Point] = centroids.flatMap(p => disc(600, p, 0.5, 77777))
+  def dataPoints(centroids: Seq[Point], number: Int = 600): Seq[Point] = centroids.flatMap(p => disc(number, p, 0.5, 77777))
 
   test("XKMeans#initialize test k = 0") {
 
@@ -155,9 +153,11 @@ class XKMeansSpec extends FunSuite with Matchers with LazyLogging {
 
   test("XKMeans#train test 3 discs") {
 
-    val kCenters = Seq(Array(0.0, 0.0), Array(0.0, 2.0), Array(2.0, 2.0))
-    val clusters = dataPoints(kCenters)
-    val actual = XKMeansTrainer(3, 200, 1E-8, 77977).train(clusters.toParArray).clusterCenters.values.toSeq
+    val kCenters = Seq(Array(0.0, 0.0), Array(1.0, 2.0), Array(2.0, 0.0))
+
+    val data = dataPoints(kCenters)
+
+    val actual = XKMeansTrainer(3, 200, 1E-8, 77977).train(data.toParArray).clusterCenters.values.toSeq
 
     val epsilon = 0.2
 
@@ -167,6 +167,29 @@ class XKMeansSpec extends FunSuite with Matchers with LazyLogging {
         s"at ${cc.point.mkString("[", ",", "]")}; distance=$distance.")
       distance should be < epsilon
     }
+
+    val (initialSet, remainingSet) = data.splitAt(5)
+
+    val initialCentroids = XKMeansTrainer.pointsToCentroids(Seq(Array(0.1, 0.2), Array(1.1, 2.3), Array(1.8, 0.1)))
+    val onlineModel = XKMeansTrainer(3, 200, 1E-8, 77977).train(initialCentroids, initialSet.par)
+
+    val results = onlineModel.update(remainingSet, 1.0).clusterCenters.map(_._2)
+
+    val actualSorted = actual.sortBy(_.statsByDim.avg(0))
+    val resultSorted = results.toSeq.sortBy(_.statsByDim.avg(0))
+
+    println("--------------")
+    actualSorted foreach { kc => println(dstats2StrE(kc.stats)) }
+    println("--------------")
+    resultSorted foreach { kc => println(dstats2StrE(kc.stats)) }
+//    println("==============")
+//    actualSorted foreach { kc => println(pstats2StrE(kc.statsByDim)) }
+//    println("--------------")
+//    resultSorted foreach { kc => println(pstats2StrE(kc.statsByDim)) }
+//    println("--------------")
+//    println(actualSorted.map(kc => pstats2StrE(kc.statsByDim)) == resultSorted.map(kc => pstats2StrE(kc.statsByDim)))
+
+    actualSorted.map(kc => pstats2StrE(kc.statsByDim)) shouldBe resultSorted.map(kc => pstats2StrE(kc.statsByDim))
   }
 
   test("XKMeans#metaclustering???") {
@@ -176,8 +199,6 @@ class XKMeansSpec extends FunSuite with Matchers with LazyLogging {
     val clusters = dataPoints(kCenters)
     val model = XKMeansTrainer(14, 200, 1E-8).train(clusters)
     val actual = model.clusterCenters.values
-
-    def stats2Str(stats: Stats[Point]) = s"Stats(${stats.count},${stats.min.toSeq},${stats.avg.toSeq},${stats.max.toSeq},${stats.variance.toSeq},${stats.stdev.toSeq},${stats.sse.toSeq})"
 
     def createMetaClusters(pairs: Iterable[(Int, Int)]): Seq[Set[Int]] = pairs
       .foldLeft(Seq[Set[Int]]()) { (acc, p) =>
@@ -193,12 +214,19 @@ class XKMeansSpec extends FunSuite with Matchers with LazyLogging {
     }
 
     //    println("-----------------------")
-    //    actual.toSeq.sortBy(_.k).foreach(p => println(f"${p.k}%2d | ${stats2Str(p.statsByDim)}"))
+    //    actual.toSeq.sortBy(_.kinitialCentroids).foreach(p => println(f"${p.k}%2d | ${stats2Str(p.statsByDim)}"))
 
     //    println("-----------------------")
     //    MetaCluster.fromModel(model, 0.001).map(x => x.name).foreach(println)
 
   }
+
+  private def dform(x: Double) = f"$x%+.8E"
+  private def pform(x: Point) = x.toSeq.map(dform(_)).mkString(", ")
+
+  private def dstats2StrE(stats: Stats[Double]) = f"Stats(${stats.count}%5d, (${dform(stats.min)}), (${dform(stats.avg)}), (${dform(stats.max)}), (${dform(stats.variance)}), (${dform(stats.stdev)}), (${dform(stats.sse)}))"
+  private def pstats2StrE(stats: Stats[Point]) = f"Stats(${stats.count}%5d, (${pform(stats.min)}), (${pform(stats.avg)}), (${pform(stats.max)}), (${pform(stats.variance)}), (${pform(stats.stdev)}), (${pform(stats.sse)}))"
+
 
 }
 

@@ -215,15 +215,13 @@ package object pointops {
    */
   implicit class ParPointsOps(points: ParSeq[Point]) {
 
-    val size = points.size
+    lazy val size = points.size
 
     def *(scalar: Double) = points.map(_ * scalar)
 
     def /(scalar: Double) = points.map(_ / scalar)
 
-    def variance(mean: Point): Point = {
-      points.map(_.sqdistByDim(mean)).sumByDimension / size
-    }
+    def variance(mean: Point): Point = points.map(_.sqdistByDim(mean)).sumByDimension / size
 
     lazy val mean: Point = {
       require(size > 0)
@@ -235,15 +233,12 @@ package object pointops {
       points.reduce((v1, v2) => v1.zip(v2).map(x => x._1 + x._2))
     }
 
-    lazy val variance: Point = {
-      points.map(_.sqdistByDim(mean)).sumByDimension / (size - 1)
-    }
+    lazy val variance: Point = points.map(_.sqdistByDim(mean)).sumByDimension / (size - 1)
 
     lazy val sigma: Point = variance.toSeq.map(math.sqrt).toArray
 
-    def normalize() = {
-      points.map(v => v.zip(mean).zip(sigma).map { case ((x, mu), sig) => (x - mu) / sig })
-    }
+    lazy val normalize = points.map(v => v.zip(mean).zip(sigma).map { case ((x, mu), sig) => (x - mu) / sig })
+
 
   }
 }

@@ -11,7 +11,7 @@ scalaVersion := "2.11.8"
 // DEPENDENCIES AND RESOLVERS
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "2.2.4" % "it,test",
+  "org.scalatest" %% "scalatest" % "3.0.1" % "it,test",
   "org.scalanlp" %% "breeze" % "0.12",
   "org.scalanlp" %% "breeze-natives" % "0.12",
   "org.scalanlp" %% "breeze-viz" % "0.12",

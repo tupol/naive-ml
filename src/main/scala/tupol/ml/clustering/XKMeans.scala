@@ -47,11 +47,36 @@ case class XKMeans(clusterCenters: Map[Int, Cluster]) extends Predictor[Point, X
 
   }
 
+  def update(dataPoints: Seq[Point], decayFactor: Double): XKMeans = {
+
+    val newCentroids = dataPoints
+      .map{ point => { val pred = predict(point); ( pred.k, pred, point ) } }
+      .groupBy(_._1)
+      .map{ case (k, pxs) =>
+          val stats = Stats.fromDoubles(pxs.map(_._2.distance))
+          val statsByDim = Stats.fromPoints(pxs.map(_._3))
+          val newCluster = Cluster(k, stats, statsByDim)
+          Cluster.merge(clusterCenters(k), newCluster)
+      }
+      .map(ck => (ck.k, ck)).toMap
+
+    XKMeans(newCentroids)
+  }
 }
 
 case class Cluster(k: Int, stats: Stats[Double], statsByDim: Stats[Point]) {
   lazy val size = stats.count
   lazy val point = statsByDim.avg
+}
+
+object Cluster {
+  def merge(c1: Cluster, c2: Cluster) = {
+    require (c1.k == c2.k, "The clusters must have the same number of centroids.")
+    val statsByDim = c1.statsByDim |+| c2.statsByDim
+    val stats = c1.stats |+| c2.stats
+    Cluster(c1.k, stats, statsByDim)
+  }
+
 }
 
 object XKMeansTrainer {
@@ -62,7 +87,7 @@ object XKMeansTrainer {
       .foldLeft(Seq[Point]())((clusters, point) => points(point) +: clusters)
       .take(k)
       .zipWithIndex
-      .map { case (p, k) => Cluster(k, Stats.fromDouble(0), Stats.fromPoint(p)) }
+      .map { case (p, k) => Cluster(k, Stats.zeroDouble, Stats.zeroPoint(p)) }
   }
 
   def initialize(k: Int, points: Seq[Point], seed: Long = Random.nextLong): Seq[Cluster] = {
@@ -71,7 +96,7 @@ object XKMeansTrainer {
 
   def pointsToCentroids(points: Seq[Point]) = points
     .zipWithIndex
-    .map { case (p, k) => Cluster(k, Stats.fromDouble(0), Stats.fromPoint(p)) }
+    .map { case (p, k) => Cluster(k, Stats.zeroDouble, Stats.zeroPoint(p)) }
 }
 
 /**

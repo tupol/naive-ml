@@ -23,10 +23,6 @@ object Stats {
 
   import scala.math.sqrt
 
-  def fromVectors(population: IndexedSeq[Double]): Stats[IndexedSeq[Double]] = {
-    val zero = (0 until population.size).map(_ => 0.0)
-    new Stats(1, population, population, population, zero, zero, zero)
-  }
 
   def fromPoint(population: Point): Stats[Point] = {
     val zero = (0 until population.size).map(_ => 0.0).toArray
@@ -59,6 +55,18 @@ object Stats {
    * @return
    */
   def fromDouble(value: Double): Stats[Double] = Stats(1, value, value, value, 0.0, 0.0, 0.0)
+
+  val zeroDouble: Stats[Double] = Stats(0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+
+  val zeroPoint = {
+    val zero = Array.emptyDoubleArray
+    Stats(0, zero, zero, zero, zero, zero, zero)
+  }
+
+  def zeroPoint(point: Point) = {
+    val zero = (0 until point.size).map(_ => 0.0).toArray
+    new Stats(0, point, point, point, zero, zero, zero)
+  }
 
 }
 
